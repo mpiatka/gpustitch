@@ -30,15 +30,15 @@ public:
 
    	}
 
-	Image *get_input_image() { return &in; }
-	Image *get_projected_image() { return &projected; }
+	Image_cuda *get_input_image() { return &in; }
+	Image_cuda *get_projected_image() { return &projected; }
 	const Cam_params& get_cam_params() const { return cam_params; }
 	const double *get_rot_mat() const { return rotation_mat; }
 
 	Cam_params cam_params;
 	Stitcher_params stitch_params;
-	Image in;
-	Image projected;
+	Image_cuda in;
+	Image_cuda projected;
 
 	double proj_angle_start;
 	double proj_angle_end;

@@ -20,10 +20,12 @@ public:
 	Stitcher_impl(Stitcher_params stitch_params,
 			const std::vector<Cam_params>& cam_params);
 
-	Image *get_input_image(size_t cam_idx);
+	Image_cuda *get_input_image(size_t cam_idx);
 	void submit_input_image(size_t cam_idx, const void *data,
 			size_t w, size_t h, size_t pitch);
-	Image *get_output_image();
+
+	void download_stitched(void *dst, size_t pitch);
+	Image_cuda *get_output_image();
 
 	void stitch();
 
@@ -34,7 +36,7 @@ private:
 	std::vector<Overlap> overlaps;
 	std::vector<Cam_overlap_info> cam_overlaps;
 
-	Image output;
+	Image_cuda output;
 
 	void project_cam(Cam_stitch_ctx& cam_ctx);
 	void project_cam(Cam_stitch_ctx& cam_ctx,

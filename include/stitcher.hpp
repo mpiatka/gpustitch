@@ -22,6 +22,8 @@ public:
 	void submit_input_image(size_t cam_idx, const void *data,
 			size_t w, size_t h, size_t pitch);
 
+	void download_stitched(void *dst, size_t pitch);
+
 	void stitch();
 private:
 	std::unique_ptr<Stitcher_impl> impl;

@@ -15,7 +15,7 @@ struct Overlap{
 	int start_x;
 	int end_x;
 
-	Image mask;
+	Image_cuda mask;
 };
 
 

@@ -86,17 +86,21 @@ int main(){
 
 	stitcher.stitch();
 
-	Image *out = stitcher.get_output_image();
+	std::vector<unsigned char> out;
+	size_t w = stitch_params.width;
+	size_t h = stitch_params.height;
+	size_t pitch = w * 4;
+	out.resize(h * pitch);
 
-	for(size_t y = 0; y < out->get_height(); y++){
-		for(size_t x = 0; x < out->get_width(); x++){
-#if 0
-			unsigned char *buf = out->data() + y * out->get_pitch() + x * out->get_bytes_per_px();
+	stitcher.download_stitched(out.data(), pitch);
+
+	for(size_t y = 0; y < h; y++){
+		for(size_t x = 0; x < w; x++){
+			unsigned char *buf = out.data() + y * pitch + x * 4;
 			output[y][x].red = buf[0];
 			output[y][x].green = buf[1];
 			output[y][x].blue = buf[2];
 			output[y][x].alpha = buf[3];
-#endif
 		}
 	}
 

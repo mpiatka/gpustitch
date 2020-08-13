@@ -18,31 +18,35 @@ Stitcher_impl::Stitcher_impl(Stitcher_params stitch_params,
 		cam_ctxs.emplace_back(stitch_params, cam_param);
 	}
 
-#if 0
 	PROFILE_DETAIL("init image");
-	for(size_t y = 0; y < output.get_height(); y++){
-		for(size_t x = 0; x < output.get_width(); x++){
-			unsigned char *buf = output.data() + y * output.get_pitch() + x * output.get_bytes_per_px();
+	Image_cpu tmp(stitcher_params.width, stitcher_params.height);
+	for(size_t y = 0; y < tmp.get_height(); y++){
+		for(size_t x = 0; x < tmp.get_width(); x++){
+			unsigned char *buf = static_cast<unsigned char*>(tmp.data())
+				+ y * tmp.get_pitch()
+				+ x * tmp.get_bytes_per_px();
+
 			buf[0] = 0;
 			buf[1] = 255;
 			buf[2] = 0;
 			buf[3] = 255;
 		}
 	}
-#endif
+
+	tmp.upload(output);
 
 	find_overlaps();
 	generate_masks();
 }
 
-Image *Stitcher_impl::get_input_image(size_t cam_idx){
+Image_cuda *Stitcher_impl::get_input_image(size_t cam_idx){
 	return cam_ctxs[cam_idx].get_input_image();
 }
 
 void Stitcher_impl::submit_input_image(size_t cam_idx, const void *data,
 		size_t w, size_t h, size_t pitch)
 {
-	Image *i = get_input_image(cam_idx);
+	Image_cuda *i = get_input_image(cam_idx);
 
 	cudaMemcpy2D(i->data(), i->get_pitch(),
 			data, pitch,
@@ -52,7 +56,18 @@ void Stitcher_impl::submit_input_image(size_t cam_idx, const void *data,
 	cudaStreamSynchronize(0);
 }
 
-Image *Stitcher_impl::get_output_image(){
+void Stitcher_impl::download_stitched(void *dst, size_t pitch){
+	Image_cuda *i = get_output_image();
+
+	cudaMemcpy2D(dst, pitch,
+			i->data(), i->get_pitch(),
+			i->get_width() * i->get_bytes_per_px(), i->get_height(),
+			cudaMemcpyDeviceToHost);
+
+	cudaStreamSynchronize(0);
+}
+
+Image_cuda *Stitcher_impl::get_output_image(){
 	return &output;
 }
 
@@ -215,21 +230,24 @@ void Stitcher_impl::generate_masks(){
 			width = o.end_x + (output.get_width() - o.start_x);
 		}
 
-		o.mask = Image(width, height);
+		o.mask = Image_cuda(width, height);
+		Image_cpu tmp(width, height);
 
 		for(int y = 0; y < height; y++){
 			for(int x = 0; x < width; x++){
-#if 0 
-				unsigned char *p = o.mask.data() + y * o.mask.get_pitch() + x * o.mask.get_bytes_per_px();
+				unsigned char *p = static_cast<unsigned char*>(tmp.data())
+					+ y * tmp.get_pitch()
+					+ x * tmp.get_bytes_per_px();
 
 				int val = (255 * x) / width;
 				p[0] = val;
 				p[1] = val;
 				p[2] = val;
 				p[3] = val;
-#endif
 			}
 		}
+
+		tmp.upload(o.mask);
 	}
 }
 
