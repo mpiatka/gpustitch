@@ -4,6 +4,7 @@ set(SOURCES
 	stitcher.cpp
 	math_util.cpp
 	profile_timer.cpp
+	project_cam.cu
 	)
 
 add_library(gpustitch ${SOURCES})

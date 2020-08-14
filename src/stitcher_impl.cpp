@@ -4,6 +4,7 @@
 #include <cuda_runtime.h>
 #include "stitcher_impl.hpp"
 #include "math_util.hpp"
+#include "project_cam.h"
 #include "profile_timer.hpp"
 
 namespace gpustitch{
@@ -57,7 +58,8 @@ void Stitcher_impl::submit_input_image(size_t cam_idx, const void *data,
 }
 
 void Stitcher_impl::download_stitched(void *dst, size_t pitch){
-	Image_cuda *i = get_output_image();
+	//Image_cuda *i = get_output_image();
+	Image_cuda *i = cam_ctxs[0].get_projected_image();
 
 	cudaMemcpy2D(dst, pitch,
 			i->data(), i->get_pitch(),
@@ -154,10 +156,10 @@ void Stitcher_impl::project_cam(Cam_stitch_ctx& cam_ctx){
 	int end_y = stitcher_params.height;
 
 	if(start_x < end_x){
-		project_cam(cam_ctx, start_x, end_x, start_y, end_y);
+		cuda_project_cam(cam_ctx, start_x, end_x, start_y, end_y);
 	} else {
-		project_cam(cam_ctx, 0, end_x, start_y, end_y);
-		project_cam(cam_ctx, start_x, stitcher_params.width, start_y, end_y);
+		cuda_project_cam(cam_ctx, 0, end_x, start_y, end_y);
+		cuda_project_cam(cam_ctx, start_x, stitcher_params.width, start_y, end_y);
 	}
 }
 
