@@ -13,7 +13,7 @@ void kern_proj_cam(unsigned char *dst, int out_w, int out_h, int out_pitch,
 	const int x = (blockIdx.x * blockDim.x) + threadIdx.x + start_x;
 	const int y = (blockIdx.y * blockDim.y) + threadIdx.y + start_y;
 
-	if(x + 1>= out_w)
+	if(x >= out_w)
 		return;
 
 	if(y >= out_h)

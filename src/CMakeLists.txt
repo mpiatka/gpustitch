@@ -5,6 +5,7 @@ set(SOURCES
 	math_util.cpp
 	profile_timer.cpp
 	project_cam.cu
+	blend.cu
 	)
 
 add_library(gpustitch ${SOURCES})

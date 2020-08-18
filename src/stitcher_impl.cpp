@@ -5,6 +5,7 @@
 #include "stitcher_impl.hpp"
 #include "math_util.hpp"
 #include "project_cam.h"
+#include "blend.h"
 #include "profile_timer.hpp"
 
 namespace gpustitch{
@@ -58,8 +59,8 @@ void Stitcher_impl::submit_input_image(size_t cam_idx, const void *data,
 }
 
 void Stitcher_impl::download_stitched(void *dst, size_t pitch){
-	//Image_cuda *i = get_output_image();
-	Image_cuda *i = cam_ctxs[0].get_projected_image();
+	Image_cuda *i = get_output_image();
+	//Image_cuda *i = cam_ctxs[0].get_projected_image();
 
 	cudaMemcpy2D(dst, pitch,
 			i->data(), i->get_pitch(),
@@ -270,6 +271,25 @@ static void blit(Image *src, int src_x, int src_y,
 #endif
 }
 
+static void cuda_blit(Image_cuda *src, int src_x, int src_y,
+		Image_cuda *dst, int dst_x, int dst_y,
+		int w, int h)
+{
+	unsigned char *from = static_cast<unsigned char*>(src->data())
+		+ (src_y * src->get_pitch())
+		+ (src_x * src->get_bytes_per_px());
+
+	unsigned char *to = static_cast<unsigned char*>(dst->data())
+		+ (dst_y * dst->get_pitch())
+		+ (dst_x * dst->get_bytes_per_px());
+
+	cudaMemcpy2D(to, dst->get_pitch(),
+			from, src->get_pitch(),
+			w * src->get_bytes_per_px(), h,
+			cudaMemcpyDeviceToDevice);
+}
+
+
 static void blit_overlap(const Image *left, int l_start_x, int l_start_y,
 		const Image *right, int r_start_x, int r_start_y,
 		const Image *mask, int m_start_x, int m_start_y,
@@ -314,14 +334,14 @@ void Stitcher_impl::blend(){
 		int end_x = cam_overlaps[i].right->start_x;
 
 		if(end_x < start_x){
-			blit(cam_ctxs[i].get_projected_image(), start_x, 0,
+			cuda_blit(cam_ctxs[i].get_projected_image(), start_x, 0,
 					&output, start_x, 0,
 					output.get_width() - start_x, output.get_height());
-			blit(cam_ctxs[i].get_projected_image(), 0, 0,
+			cuda_blit(cam_ctxs[i].get_projected_image(), 0, 0,
 					&output, 0, 0,
 					end_x, output.get_height());
 		} else {
-			blit(cam_ctxs[i].get_projected_image(), start_x, 0,
+			cuda_blit(cam_ctxs[i].get_projected_image(), start_x, 0,
 					&output, start_x, 0,
 					end_x - start_x, output.get_height());
 		}
@@ -329,24 +349,24 @@ void Stitcher_impl::blend(){
 	}
 
 	for(const auto& o : overlaps){
-		Image *left = cam_ctxs[o.left_idx].get_projected_image();
-		Image *right = cam_ctxs[o.right_idx].get_projected_image();
+		const Image_cuda *left = cam_ctxs[o.left_idx].get_projected_image();
+		const Image_cuda *right = cam_ctxs[o.right_idx].get_projected_image();
 
 		if(o.start_x < o.end_x){
-			blit_overlap(left, o.start_x, 0,
+			cuda_blit_overlap(left, o.start_x, 0,
 					right, o.start_x, 0,
 					&o.mask, 0, 0,
 					&output, o.start_x, 0,
 					o.end_x - o.start_x, output.get_height()
 					);
 		} else {
-			blit_overlap(left, o.start_x, 0,
+			cuda_blit_overlap(left, o.start_x, 0,
 					right, o.start_x, 0,
 					&o.mask, 0, 0,
 					&output, o.start_x, 0,
 					output.get_width() - o.start_x, output.get_height()
 					);
-			blit_overlap(left, 0, 0,
+			cuda_blit_overlap(left, 0, 0,
 					right, 0, 0,
 					&o.mask, 0, 0,
 					&output, 0, 0,

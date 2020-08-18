@@ -38,8 +38,8 @@ void submit_cam_image(Stitcher& stitcher,
 
 int main(){
 	Stitcher_params stitch_params;
-	stitch_params.width = 3840;
-	stitch_params.height = 1920;
+	stitch_params.width = 7680;
+	stitch_params.height = 3840;
 
 	std::vector<Cam_params> cam_params;
 
@@ -74,6 +74,11 @@ int main(){
 	Stitcher stitcher(stitch_params, cam_params);
 
 	png::image<png::rgba_pixel> output(stitch_params.width, stitch_params.height);
+	std::vector<unsigned char> out;
+	size_t w = stitch_params.width;
+	size_t h = stitch_params.height;
+	size_t pitch = w * 4;
+	out.resize(h * pitch);
 
 	png::image<png::rgba_pixel> in("0_0.png");
 	submit_cam_image(stitcher, in, 0);
@@ -84,13 +89,8 @@ int main(){
 	in = png::image<png::rgba_pixel>("3_0.png");
 	submit_cam_image(stitcher, in, 3);
 
-	stitcher.stitch();
 
-	std::vector<unsigned char> out;
-	size_t w = stitch_params.width;
-	size_t h = stitch_params.height;
-	size_t pitch = w * 4;
-	out.resize(h * pitch);
+	stitcher.stitch();
 
 	stitcher.download_stitched(out.data(), pitch);
 
