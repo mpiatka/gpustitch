@@ -1,11 +1,13 @@
 #ifndef CAM_STITCH_CTX
 #define CAM_STITCH_CTX
 
+#include <cuda_runtime.h>
 #include "cam_params.hpp"
 #include "stitcher_params.hpp"
 #include "image.hpp"
 #include "math_util.hpp"
 #include "profile_timer.hpp"
+#include "gpustitch_common.hpp"
 
 namespace gpustitch{
 
@@ -28,6 +30,8 @@ public:
 		proj_angle_start = yaw_center - half_fov;
 		proj_angle_end = yaw_center + half_fov;
 
+		cudaStreamCreate(&in_stream);
+
    	}
 
 	Image_cuda *get_input_image() { return &in; }
@@ -39,6 +43,8 @@ public:
 	Stitcher_params stitch_params;
 	Image_cuda in;
 	Image_cuda projected;
+
+	CUstream_st *in_stream;
 
 	double proj_angle_start;
 	double proj_angle_end;

@@ -24,6 +24,8 @@ public:
 	void submit_input_image(size_t cam_idx, const void *data,
 			size_t w, size_t h, size_t pitch);
 
+	void get_input_stream(size_t cam_idx, CUstream_st **stream) const;
+
 	void download_stitched(void *dst, size_t pitch);
 	Image_cuda *get_output_image();
 
@@ -37,6 +39,8 @@ private:
 	std::vector<Cam_overlap_info> cam_overlaps;
 
 	Image_cuda output;
+
+	CUstream_st *out_stream;
 
 	void project_cam(Cam_stitch_ctx& cam_ctx);
 	void project_cam(Cam_stitch_ctx& cam_ctx,

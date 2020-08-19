@@ -2,6 +2,7 @@
 #define IMAGE_HPP
 
 #include <vector>
+#include "gpustitch_common.hpp"
 
 namespace gpustitch{
 

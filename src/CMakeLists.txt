@@ -33,4 +33,5 @@ target_include_directories(stitchtest
 find_package(PNG REQUIRED)
 target_link_libraries(stitchtest PRIVATE
 	gpustitch::gpustitch
-	PNG::PNG)
+	PNG::PNG
+	cudart)

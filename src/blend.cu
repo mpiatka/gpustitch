@@ -37,14 +37,15 @@ void cuda_blit_overlap(const Image_cuda *left, int l_start_x, int l_start_y,
 		const Image_cuda *right, int r_start_x, int r_start_y,
 		const Image_cuda *mask, int m_start_x, int m_start_y,
 		Image_cuda *dst, int dst_x, int dst_y,
-		int w, int h)
+		int w, int h,
+		CUstream_st *stream)
 {
 	
 	dim3 blockSize(32,32);
 	dim3 numBlocks((w + blockSize.x - 1) / blockSize.x,
 			(h + blockSize.y - 1) / blockSize.y);
 
-	kern_blit_overlap<<<numBlocks, blockSize, 0, 0>>>
+	kern_blit_overlap<<<numBlocks, blockSize, 0, stream>>>
 		((const unsigned char *)left->data(), l_start_x, l_start_y, left->get_pitch(),
 		(const unsigned char *)right->data(), r_start_x, r_start_y, right->get_pitch(),
 		(const unsigned char *)mask->data(), m_start_x, m_start_y, mask->get_pitch(),

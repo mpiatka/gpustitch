@@ -2,6 +2,7 @@
 #include <cmath>
 #include <vector>
 #include <png++/png.hpp>
+#include <cuda_runtime.h>
 
 #include "stitcher.hpp"
 #include "profile_timer.hpp"
@@ -17,23 +18,22 @@ void submit_cam_image(Stitcher& stitcher,
 		size_t idx)
 {
 	PROFILE_FUNC;
-	std::vector<unsigned char> tmp;
-	tmp.resize(in.get_width() * in.get_height() * 4);
 	size_t tmp_pitch = in.get_width() * 4;
 
 	unsigned char *buf;
+	cudaHostAlloc(&buf, in.get_width() * in.get_height() * 4, 0);
 
 	for(size_t y = 0; y < in.get_height(); y++){
 		for(size_t x = 0; x < in.get_width(); x++){
-			buf = tmp.data() + y * tmp_pitch + x * 4;
-			buf[0] = in[y][x].red;
-			buf[1] = in[y][x].green;
-			buf[2] = in[y][x].blue;
-			buf[3] = in[y][x].alpha;
+			unsigned char *dst = buf + y * tmp_pitch + x * 4;
+			dst[0] = in[y][x].red;
+			dst[1] = in[y][x].green;
+			dst[2] = in[y][x].blue;
+			dst[3] = in[y][x].alpha;
 		}
 	}
 
-	stitcher.submit_input_image(idx, tmp.data(), in.get_width(), in.get_height(), tmp_pitch);
+	stitcher.submit_input_image(idx, buf, in.get_width(), in.get_height(), tmp_pitch);
 }
 
 int main(){

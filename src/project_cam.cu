@@ -1,17 +1,21 @@
 #include "project_cam.h"
 #include "image.hpp"
 
-__constant__ float rot_mat[9];
+struct proj_params{
+	int start_x;
+	int start_y;
+	float rot_mat[9];
+};
 
 	__global__
 void kern_proj_cam(unsigned char *dst, int out_w, int out_h, int out_pitch,
 		unsigned char *src, int in_w, int in_h, int in_pitch,
-		int start_x, int start_y,
-		float focal_len
+		float focal_len,
+		struct proj_params p
 		)
 {
-	const int x = (blockIdx.x * blockDim.x) + threadIdx.x + start_x;
-	const int y = (blockIdx.y * blockDim.y) + threadIdx.y + start_y;
+	const int x = (blockIdx.x * blockDim.x) + threadIdx.x + p.start_x;
+	const int y = (blockIdx.y * blockDim.y) + threadIdx.y + p.start_y;
 
 	if(x >= out_w)
 		return;
@@ -32,9 +36,9 @@ void kern_proj_cam(unsigned char *dst, int out_w, int out_h, int out_pitch,
 
 	float3 rot_dir;
 
-	rot_dir.x = dir.x * rot_mat[0] + dir.y * rot_mat[1] + dir.z * rot_mat[2];
-	rot_dir.y = dir.x * rot_mat[3] + dir.y * rot_mat[4] + dir.z * rot_mat[5];
-	rot_dir.z = dir.x * rot_mat[6] + dir.y * rot_mat[7] + dir.z * rot_mat[8];
+	rot_dir.x = dir.x * p.rot_mat[0] + dir.y * p.rot_mat[1] + dir.z * p.rot_mat[2];
+	rot_dir.y = dir.x * p.rot_mat[3] + dir.y * p.rot_mat[4] + dir.z * p.rot_mat[5];
+	rot_dir.z = dir.x * p.rot_mat[6] + dir.y * p.rot_mat[7] + dir.z * p.rot_mat[8];
 
 	float angle = acosf(rot_dir.z);
 
@@ -75,29 +79,22 @@ void cuda_project_cam(gpustitch::Cam_stitch_ctx& cam_ctx,
 	const auto& cam_params = cam_ctx.get_cam_params();
 
 	const double *rot_mat_d = cam_ctx.get_rot_mat();
-	float rot_mat_f[9];
 
+	struct proj_params params;
+	params.start_x = start_x;
+	params.start_y = start_y;
 	for(int i = 0; i < 9; i++){
-		rot_mat_f[i] = rot_mat_d[i];
+		params.rot_mat[i] = rot_mat_d[i];
 	}
-
-	/*
-	rot_mat_f[0] = 1;
-	rot_mat_f[4] = 1;
-	rot_mat_f[8] = 1;
-	*/
-
-	cudaMemcpyToSymbol(rot_mat, &rot_mat_f[0], 9 * sizeof(float), 0);
-
 
 	dim3 blockSize(32,32);
 	dim3 numBlocks((w + blockSize.x - 1) / blockSize.x,
 			(h + blockSize.y - 1) / blockSize.y);
 
-	kern_proj_cam<<<numBlocks, blockSize, 0, 0>>>
+	kern_proj_cam<<<numBlocks, blockSize, 0, cam_ctx.in_stream>>>
 		((unsigned char *)out->data(), out_w, out_h, out->get_pitch(),
 		 (unsigned char *)in->data(), in->get_width(), in->get_height(), in->get_pitch(),
-		 start_x, start_y,
-		 cam_params.focal_len
+		 cam_params.focal_len,
+		 params
 		 );
 }

@@ -27,6 +27,10 @@ void Stitcher::submit_input_image(size_t cam_idx, const void *data,
 	impl->submit_input_image(cam_idx, data, w, h, pitch);
 }
 
+void Stitcher::get_input_stream(size_t cam_idx, CUstream_st **stream) const{
+	impl->get_input_stream(cam_idx, stream);
+}
+
 void Stitcher::download_stitched(void *dst, size_t pitch){
 	impl->download_stitched(dst, pitch);
 }
