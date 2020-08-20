@@ -40,6 +40,7 @@ private:
 
 	Image_cuda output;
 
+	//TODO RAII stream wrapper
 	CUstream_st *out_stream;
 
 	void project_cam(Cam_stitch_ctx& cam_ctx);

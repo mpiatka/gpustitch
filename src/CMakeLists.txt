@@ -35,3 +35,19 @@ target_link_libraries(stitchtest PRIVATE
 	gpustitch::gpustitch
 	PNG::PNG
 	cudart)
+
+install(TARGETS gpustitch
+	EXPORT gpustitch-export
+	ARCHIVE DESTINATION lib
+	LIBRARY DESTINATION lib
+	INCLUDES DESTINATION include/libgpustitch
+	RUNTIME DESTINATION bin)
+
+install(EXPORT gpustitch-export
+	FILE gpustitchConfig.cmake
+	NAMESPACE gpustitch::
+	DESTINATION /lib/cmake/gpustitch)
+
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/include
+	DESTINATION include/libgpustitch
+	FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
