@@ -12,13 +12,15 @@ add_library(gpustitch ${SOURCES})
 add_library(gpustitch::gpustitch ALIAS gpustitch)
 target_compile_features(gpustitch PUBLIC cxx_std_11)
 set_target_properties(gpustitch PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-target_link_libraries(gpustitch PRIVATE cudart)
+find_library(CUDART_LIBRARY cudart ${CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES})
+target_link_libraries(gpustitch PRIVATE ${CUDART_LIBRARY})
 target_include_directories(gpustitch
 	PUBLIC
 	$<INSTALL_INTERFACE:include>
 	$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
 	PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}
+	${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
 	)
 
 add_executable(stitchtest main.cpp)
@@ -29,12 +31,13 @@ target_include_directories(stitchtest
 	#$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
 	PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}
+	${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
 	)
 find_package(PNG REQUIRED)
 target_link_libraries(stitchtest PRIVATE
 	gpustitch::gpustitch
 	PNG::PNG
-	cudart)
+	${CUDART_LIBRARY})
 
 install(TARGETS gpustitch
 	EXPORT gpustitch-export
