@@ -51,3 +51,11 @@ install(EXPORT gpustitch-export
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/include
 	DESTINATION include/libgpustitch
 	FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
+
+configure_file(
+	${PROJECT_SOURCE_DIR}/src/libgpustitch.pc.in
+	${PROJECT_BINARY_DIR}/src/libgpustitch.pc
+	@ONLY
+	)
+
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libgpustitch.pc DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/pkgconfig)

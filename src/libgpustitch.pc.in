@@ -1,0 +1,11 @@
+prefix="@CMAKE_INSTALL_PREFIX@"
+exec_prefix="${prefix}"
+libdir="${prefix}/@CMAKE_INSTALL_LIBDIR@"
+includedir="${prefix}/include/"
+
+Name: GPUstitch
+Description: Real time panorama stitching
+Requires: 
+Version: 0.0.1
+Libs: -L${libdir} -lgpustitch
+Cflags: -I${includedir}
