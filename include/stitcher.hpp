@@ -20,11 +20,13 @@ public:
 
 	Stitcher& operator=(Stitcher&&);
 
-	Image *get_input_image(size_t cam_idx);
-	Image *get_output_image();
+	Image_cuda *get_input_image(size_t cam_idx);
+	Image_cuda *get_output_image();
 
 	void get_input_stream(size_t cam_idx, CUstream_st **stream) const;
+	void get_output_stream(CUstream_st **stream) const;
 
+	void submit_input_image(size_t cam_idx);
 	void submit_input_image(size_t cam_idx, const void *data,
 			size_t w, size_t h, size_t pitch);
 

@@ -47,6 +47,11 @@ Image_cuda *Stitcher_impl::get_input_image(size_t cam_idx){
 	return cam_ctxs[cam_idx].get_input_image();
 }
 
+void Stitcher_impl::submit_input_image(size_t cam_idx){
+	Cam_stitch_ctx& cam_ctx = cam_ctxs[cam_idx];
+	project_cam(cam_ctx);
+}
+
 void Stitcher_impl::submit_input_image(size_t cam_idx, const void *data,
 		size_t w, size_t h, size_t pitch)
 {
@@ -60,11 +65,15 @@ void Stitcher_impl::submit_input_image(size_t cam_idx, const void *data,
 			cudaMemcpyHostToDevice,
 			cam_ctx.in_stream);
 
-	project_cam(cam_ctx);
+	submit_input_image(cam_idx);
 }
 
 void Stitcher_impl::get_input_stream(size_t cam_idx, CUstream_st **stream) const{
 	*stream = cam_ctxs[cam_idx].in_stream;
+}
+
+void Stitcher_impl::get_output_stream(CUstream_st **stream) const{
+	*stream = out_stream;
 }
 
 void Stitcher_impl::download_stitched(void *dst, size_t pitch){
@@ -159,8 +168,6 @@ void Stitcher_impl::project_cam(Cam_stitch_ctx& cam_ctx){
 
 	if(end_x < 0) end_x += stitcher_params.width;
 	if(end_x > stitcher_params.width) end_x -= stitcher_params.width;
-
-	std::cout << start_x << ", " << end_x << std::endl;
 
 	int start_y = 0;
 	int end_y = stitcher_params.height;

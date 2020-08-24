@@ -12,6 +12,7 @@ public:
 	size_t get_height() const { return height; }
 	size_t get_pitch() const { return pitch; }
 	size_t get_bytes_per_px() const { return bytes_per_px; }
+	size_t get_row_bytes() const { return bytes_per_px * width; }
 
 protected:
 	Image();
