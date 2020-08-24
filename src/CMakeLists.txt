@@ -12,6 +12,7 @@ add_library(gpustitch ${SOURCES})
 add_library(gpustitch::gpustitch ALIAS gpustitch)
 target_compile_features(gpustitch PUBLIC cxx_std_11)
 set_target_properties(gpustitch PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+set_target_properties(gpustitch PROPERTIES CUDA_RESOLVE_DEVICE_SYMBOLS ON)
 find_library(CUDART_LIBRARY cudart ${CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES})
 target_link_libraries(gpustitch PRIVATE ${CUDART_LIBRARY})
 target_include_directories(gpustitch

@@ -15,7 +15,10 @@ Image *Stitcher::get_output_image(){
 	return impl->get_output_image();
 }
 
+Stitcher::Stitcher() = default;
 Stitcher::~Stitcher() = default;
+
+Stitcher& Stitcher::operator=(Stitcher&&) = default;
 
 void Stitcher::stitch(){
 	impl->stitch();

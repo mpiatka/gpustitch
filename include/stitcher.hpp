@@ -15,7 +15,10 @@ class Stitcher_impl;
 class Stitcher{
 public:
 	Stitcher(Stitcher_params stitch_params, const std::vector<Cam_params>& cam_params);
+	Stitcher();
 	~Stitcher();
+
+	Stitcher& operator=(Stitcher&&);
 
 	Image *get_input_image(size_t cam_idx);
 	Image *get_output_image();
