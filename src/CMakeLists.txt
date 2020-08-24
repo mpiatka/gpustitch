@@ -51,7 +51,7 @@ install(EXPORT gpustitch-export
 	NAMESPACE gpustitch::
 	DESTINATION /lib/cmake/gpustitch)
 
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/include
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/
 	DESTINATION include/libgpustitch
 	FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
 
