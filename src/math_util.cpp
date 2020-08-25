@@ -7,7 +7,7 @@ double toRadian(double deg){
 	return (deg / 180) * 3.14159265;
 }
 
-void getRotationMat(double yaw, double pitch, double roll, double *res){
+void getRotationMat(double yaw, double pitch, double roll, float *res){
 	yaw = -yaw;
 	res[0] = cos(roll) * cos(yaw) - sin(roll) * sin(pitch) * sin(yaw);
 	res[1] = -sin(roll) * cos(pitch);

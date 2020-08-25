@@ -1,21 +1,16 @@
 #include "project_cam.h"
+#include "cam_params.hpp"
 #include "image.hpp"
-
-struct proj_params{
-	int start_x;
-	int start_y;
-	float rot_mat[9];
-};
 
 	__global__
 void kern_proj_cam(unsigned char *dst, int out_w, int out_h, int out_pitch,
 		unsigned char *src, int in_w, int in_h, int in_pitch,
-		float focal_len,
-		struct proj_params p
+		struct gpustitch::Cam_params p,
+		int start_x, int start_y
 		)
 {
-	const int x = (blockIdx.x * blockDim.x) + threadIdx.x + p.start_x;
-	const int y = (blockIdx.y * blockDim.y) + threadIdx.y + p.start_y;
+	const int x = (blockIdx.x * blockDim.x) + threadIdx.x + start_x;
+	const int y = (blockIdx.y * blockDim.y) + threadIdx.y + start_y;
 
 	if(x >= out_w)
 		return;
@@ -48,9 +43,16 @@ void kern_proj_cam(unsigned char *dst, int out_w, int out_h, int out_pitch,
 	rot_dir.x = rot_dir.x * norm;
 	rot_dir.y = rot_dir.y * norm;
 
-	float sampleR = focal_len * angle;
-	int sampleX = /*cos(angle2)*/ rot_dir.x * sampleR + in_w / 2;
-	int sampleY = /*-sin(angle2)*/ -rot_dir.y * sampleR + in_h / 2;
+	float Rnorm = 2.f / in_h;
+
+	float sampleR = p.focal_len * angle;
+
+	float sampleCorr = p.distortion[0] * sampleR * Rnorm;
+	sampleCorr = (sampleCorr + p.distortion[1]) * sampleR * Rnorm;
+	sampleCorr = (sampleCorr + p.distortion[2]) * sampleR * Rnorm;
+	sampleCorr = (sampleCorr + p.distortion[3]) * sampleR;
+	int sampleX = /*cos(angle2)*/ rot_dir.x * sampleCorr + in_w / 2 + p.x_offset;
+	int sampleY = /*-sin(angle2)*/ -rot_dir.y * sampleCorr + in_h / 2 + p.y_offset;
 
 	if(sampleY >= 0 && sampleY < in_h
 			&& sampleX >= 0 && sampleX < in_w)
@@ -78,15 +80,6 @@ void cuda_project_cam(gpustitch::Cam_stitch_ctx& cam_ctx,
 
 	const auto& cam_params = cam_ctx.get_cam_params();
 
-	const double *rot_mat_d = cam_ctx.get_rot_mat();
-
-	struct proj_params params;
-	params.start_x = start_x;
-	params.start_y = start_y;
-	for(int i = 0; i < 9; i++){
-		params.rot_mat[i] = rot_mat_d[i];
-	}
-
 	dim3 blockSize(32,32);
 	dim3 numBlocks((w + blockSize.x - 1) / blockSize.x,
 			(h + blockSize.y - 1) / blockSize.y);
@@ -94,7 +87,7 @@ void cuda_project_cam(gpustitch::Cam_stitch_ctx& cam_ctx,
 	kern_proj_cam<<<numBlocks, blockSize, 0, cam_ctx.in_stream>>>
 		((unsigned char *)out->data(), out_w, out_h, out->get_pitch(),
 		 (unsigned char *)in->data(), in->get_width(), in->get_height(), in->get_pitch(),
-		 cam_params.focal_len,
-		 params
+		 cam_params,
+		 start_x, start_y
 		 );
 }

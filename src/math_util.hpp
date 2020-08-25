@@ -4,7 +4,7 @@
 namespace gpustitch{
 
 double toRadian(double deg);
-void getRotationMat(double yaw, double pitch, double roll, double *res);
+void getRotationMat(double yaw, double pitch, double roll, float *res);
 
 }
 

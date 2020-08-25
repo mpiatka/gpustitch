@@ -47,9 +47,6 @@ private:
 	CUstream_st *out_stream;
 
 	void project_cam(Cam_stitch_ctx& cam_ctx);
-	void project_cam(Cam_stitch_ctx& cam_ctx,
-		size_t start_x, size_t end_x,
-		size_t start_y, size_t end_y);
 
 	void blend();
 

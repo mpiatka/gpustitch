@@ -23,7 +23,7 @@ public:
 		getRotationMat(cam_params.yaw,
 				cam_params.pitch,
 				cam_params.roll,
-				rotation_mat);
+				this->cam_params.rot_mat);
 
 		double yaw_center = cam_params.yaw;
 		double half_fov = (double) cam_params.height / 2 / cam_params.focal_len; //TODO
@@ -37,7 +37,7 @@ public:
 	Image_cuda *get_input_image() { return &in; }
 	Image_cuda *get_projected_image() { return &projected; }
 	const Cam_params& get_cam_params() const { return cam_params; }
-	const double *get_rot_mat() const { return rotation_mat; }
+	const float *get_rot_mat() const { return cam_params.rot_mat; }
 
 	Cam_params cam_params;
 	Stitcher_params stitch_params;
@@ -48,8 +48,6 @@ public:
 
 	double proj_angle_start;
 	double proj_angle_end;
-
-	double rotation_mat[9];
 };
 
 }
