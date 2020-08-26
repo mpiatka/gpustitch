@@ -43,16 +43,17 @@ void kern_proj_cam(unsigned char *dst, int out_w, int out_h, int out_pitch,
 	rot_dir.x = rot_dir.x * norm;
 	rot_dir.y = rot_dir.y * norm;
 
-	float Rnorm = 2.f / in_h;
-
 	float sampleR = p.focal_len * angle;
 
-	float sampleCorr = p.distortion[0] * sampleR * Rnorm;
-	sampleCorr = (sampleCorr + p.distortion[1]) * sampleR * Rnorm;
-	sampleCorr = (sampleCorr + p.distortion[2]) * sampleR * Rnorm;
-	sampleCorr = (sampleCorr + p.distortion[3]) * sampleR;
+	const float in_h_half = in_h / 2;
+	float Rnorm = sampleR / in_h_half;
+
+	float sampleCorr = p.distortion[0] * Rnorm;
+	sampleCorr = (sampleCorr + p.distortion[1]) * Rnorm;
+	sampleCorr = (sampleCorr + p.distortion[2]) * Rnorm;
+	sampleCorr = (sampleCorr + p.distortion[3]) * Rnorm * in_h_half;
 	int sampleX = /*cos(angle2)*/ rot_dir.x * sampleCorr + in_w / 2 + p.x_offset;
-	int sampleY = /*-sin(angle2)*/ -rot_dir.y * sampleCorr + in_h / 2 + p.y_offset;
+	int sampleY = /*-sin(angle2)*/ -rot_dir.y * sampleCorr + in_h_half + p.y_offset;
 
 	if(sampleY >= 0 && sampleY < in_h
 			&& sampleX >= 0 && sampleX < in_w)
