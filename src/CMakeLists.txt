@@ -6,6 +6,7 @@ set(SOURCES
 	profile_timer.cpp
 	project_cam.cu
 	blend.cu
+	config_utils.cpp
 	)
 
 add_library(gpustitch ${SOURCES})
@@ -14,7 +15,8 @@ target_compile_features(gpustitch PUBLIC cxx_std_11)
 set_target_properties(gpustitch PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 set_target_properties(gpustitch PROPERTIES CUDA_RESOLVE_DEVICE_SYMBOLS ON)
 find_library(CUDART_LIBRARY cudart ${CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES})
-target_link_libraries(gpustitch PRIVATE ${CUDART_LIBRARY})
+target_link_libraries(gpustitch PRIVATE
+	${CUDART_LIBRARY})
 target_include_directories(gpustitch
 	PUBLIC
 	$<INSTALL_INTERFACE:include>
@@ -22,6 +24,7 @@ target_include_directories(gpustitch
 	PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}
 	${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
+	${EXTERNAL_LIB_HEADERS}
 	)
 
 add_executable(stitchtest main.cpp)
