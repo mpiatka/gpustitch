@@ -24,14 +24,22 @@ void Stitcher::stitch(){
 	impl->stitch();
 }
 
-void Stitcher::submit_input_image(size_t cam_idx)
+void Stitcher::submit_input_image_async(size_t cam_idx)
 {
-	impl->submit_input_image(cam_idx);
+	impl->submit_input_image_async(cam_idx);
 }
 void Stitcher::submit_input_image(size_t cam_idx, const void *data,
-		size_t w, size_t h, size_t pitch)
+		size_t w, size_t h, size_t pitch,
+		Src_mem_kind mem_kind)
 {
-	impl->submit_input_image(cam_idx, data, w, h, pitch);
+	impl->submit_input_image(cam_idx, data, w, h, pitch, mem_kind);
+}
+
+void Stitcher::submit_input_image_async(size_t cam_idx, const void *data,
+			size_t w, size_t h, size_t pitch,
+			Src_mem_kind mem_kind)
+{
+	impl->submit_input_image_async(cam_idx, data, w, h, pitch, mem_kind);
 }
 
 void Stitcher::get_input_stream(size_t cam_idx, CUstream_st **stream) const{

@@ -7,6 +7,7 @@ set(SOURCES
 	project_cam.cu
 	blend.cu
 	config_utils.cpp
+	image_cuda_array.cpp
 	)
 
 add_library(gpustitch ${SOURCES})

@@ -47,25 +47,38 @@ Image_cuda *Stitcher_impl::get_input_image(size_t cam_idx){
 	return cam_ctxs[cam_idx].get_input_image();
 }
 
-void Stitcher_impl::submit_input_image(size_t cam_idx){
+void Stitcher_impl::submit_input_image_async(size_t cam_idx){
 	Cam_stitch_ctx& cam_ctx = cam_ctxs[cam_idx];
 	project_cam(cam_ctx);
 }
 
 void Stitcher_impl::submit_input_image(size_t cam_idx, const void *data,
-		size_t w, size_t h, size_t pitch)
+		size_t w, size_t h, size_t pitch,
+		Src_mem_kind mem_kind)
+{
+	Cam_stitch_ctx& cam_ctx = cam_ctxs[cam_idx];
+	submit_input_image_async(cam_idx, data, w, h, pitch, mem_kind);
+	cudaStreamSynchronize(cam_ctx.in_stream);
+}
+
+void Stitcher_impl::submit_input_image_async(size_t cam_idx, const void *data,
+		size_t w, size_t h, size_t pitch,
+		Src_mem_kind mem_kind)
 {
 	Image_cuda *i = get_input_image(cam_idx);
 
 	Cam_stitch_ctx& cam_ctx = cam_ctxs[cam_idx];
 
+	cudaMemcpyKind memcpy_kind =
+		(mem_kind == Src_mem_kind::Host) ? cudaMemcpyHostToDevice : cudaMemcpyDeviceToDevice;
+
 	cudaMemcpy2DAsync(i->data(), i->get_pitch(),
 			data, pitch,
 			w * 4, h,
-			cudaMemcpyHostToDevice,
+			memcpy_kind,
 			cam_ctx.in_stream);
 
-	submit_input_image(cam_idx);
+	submit_input_image_async(cam_idx);
 }
 
 void Stitcher_impl::get_input_stream(size_t cam_idx, CUstream_st **stream) const{
