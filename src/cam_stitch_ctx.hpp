@@ -5,6 +5,7 @@
 #include "cam_params.hpp"
 #include "stitcher_params.hpp"
 #include "image.hpp"
+#include "image_cuda_array.hpp"
 #include "math_util.hpp"
 #include "profile_timer.hpp"
 #include "gpustitch_common.hpp"
@@ -16,7 +17,7 @@ public:
 	Cam_stitch_ctx(Stitcher_params stitch_params, Cam_params cam_params) :
 		cam_params(cam_params),
 		stitch_params(stitch_params),
-		in(cam_params.width, cam_params.height),
+		in_array(cam_params.width, cam_params.height),
 		projected(stitch_params.width, stitch_params.height)
 	{
 		PROFILE_FUNC;
@@ -34,15 +35,16 @@ public:
 
    	}
 
-	Image_cuda *get_input_image() { return &in; }
+	Image_cuda_array *get_input_image() { return &in_array; }
 	Image_cuda *get_projected_image() { return &projected; }
 	const Cam_params& get_cam_params() const { return cam_params; }
 	const float *get_rot_mat() const { return cam_params.rot_mat; }
 
 	Cam_params cam_params;
 	Stitcher_params stitch_params;
-	Image_cuda in;
 	Image_cuda projected;
+
+	Image_cuda_array in_array;
 
 	CUstream_st *in_stream;
 

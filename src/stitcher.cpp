@@ -8,9 +8,6 @@ Stitcher::Stitcher(Stitcher_params stitch_params, const std::vector<Cam_params>&
 	impl(new Stitcher_impl(stitch_params, cam_params)) {  }
 
 
-Image_cuda *Stitcher::get_input_image(size_t cam_idx){
-	return impl->get_input_image(cam_idx);
-}
 Image_cuda *Stitcher::get_output_image(){
 	return impl->get_output_image();
 }

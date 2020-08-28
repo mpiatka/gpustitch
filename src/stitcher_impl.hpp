@@ -20,8 +20,6 @@ public:
 	Stitcher_impl(Stitcher_params stitch_params,
 			const std::vector<Cam_params>& cam_params);
 
-	Image_cuda *get_input_image(size_t cam_idx);
-
 	void submit_input_image_async(size_t cam_idx);
 
 	void submit_input_image(size_t cam_idx, const void *data,

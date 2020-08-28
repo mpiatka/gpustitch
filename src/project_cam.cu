@@ -4,7 +4,7 @@
 
 	__global__
 void kern_proj_cam(unsigned char *dst, int out_w, int out_h, int out_pitch,
-		unsigned char *src, int in_w, int in_h, int in_pitch,
+		cudaTextureObject_t src, int in_w, int in_h,
 		struct gpustitch::Cam_params p,
 		int start_x, int start_y
 		)
@@ -52,16 +52,16 @@ void kern_proj_cam(unsigned char *dst, int out_w, int out_h, int out_pitch,
 	sampleCorr = (sampleCorr + p.distortion[1]) * Rnorm;
 	sampleCorr = (sampleCorr + p.distortion[2]) * Rnorm;
 	sampleCorr = (sampleCorr + p.distortion[3]) * Rnorm * in_h_half;
-	int sampleX = /*cos(angle2)*/ rot_dir.x * sampleCorr + in_w / 2 + p.x_offset;
-	int sampleY = /*-sin(angle2)*/ -rot_dir.y * sampleCorr + in_h_half + p.y_offset;
+	float sampleX = /*cos(angle2)*/ rot_dir.x * sampleCorr + in_w / 2 + p.x_offset;
+	float sampleY = /*-sin(angle2)*/ -rot_dir.y * sampleCorr + in_h_half + p.y_offset;
 
 	if(sampleY >= 0 && sampleY < in_h
 			&& sampleX >= 0 && sampleX < in_w)
 	{
-		uchar4 *from = (uchar4 *)(src + sampleY * in_pitch + sampleX * 4);
+		float4 from = tex2D<float4>(src, sampleX, sampleY);
 		uchar4 *to = (uchar4 *)(dst + y * out_pitch + x * 4);
 
-		*to = *from;
+		*to = make_uchar4(from.x * 255, from.y * 255, from.z * 255, 255);
 
 	}
 }
@@ -74,7 +74,7 @@ void cuda_project_cam(gpustitch::Cam_stitch_ctx& cam_ctx,
 	size_t h = end_y - start_y;
 
 	gpustitch::Image_cuda *out = cam_ctx.get_projected_image();
-	gpustitch::Image_cuda *in = cam_ctx.get_input_image();
+	gpustitch::Image_cuda_array *in = cam_ctx.get_input_image();
 
 	size_t out_w = out->get_width();
 	size_t out_h = out->get_height();
@@ -87,7 +87,7 @@ void cuda_project_cam(gpustitch::Cam_stitch_ctx& cam_ctx,
 
 	kern_proj_cam<<<numBlocks, blockSize, 0, cam_ctx.in_stream>>>
 		((unsigned char *)out->data(), out_w, out_h, out->get_pitch(),
-		 (unsigned char *)in->data(), in->get_width(), in->get_height(), in->get_pitch(),
+		 in->get_tex_obj(), in->get_width(), in->get_height(),
 		 cam_params,
 		 start_x, start_y
 		 );

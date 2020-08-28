@@ -43,10 +43,6 @@ Stitcher_impl::Stitcher_impl(Stitcher_params stitch_params,
 	generate_masks();
 }
 
-Image_cuda *Stitcher_impl::get_input_image(size_t cam_idx){
-	return cam_ctxs[cam_idx].get_input_image();
-}
-
 void Stitcher_impl::submit_input_image_async(size_t cam_idx){
 	Cam_stitch_ctx& cam_ctx = cam_ctxs[cam_idx];
 	project_cam(cam_ctx);
@@ -65,14 +61,14 @@ void Stitcher_impl::submit_input_image_async(size_t cam_idx, const void *data,
 		size_t w, size_t h, size_t pitch,
 		Src_mem_kind mem_kind)
 {
-	Image_cuda *i = get_input_image(cam_idx);
+	Image_cuda_array *i = cam_ctxs[cam_idx].get_input_image();
 
 	Cam_stitch_ctx& cam_ctx = cam_ctxs[cam_idx];
 
 	cudaMemcpyKind memcpy_kind =
 		(mem_kind == Src_mem_kind::Host) ? cudaMemcpyHostToDevice : cudaMemcpyDeviceToDevice;
 
-	cudaMemcpy2DAsync(i->data(), i->get_pitch(),
+	cudaMemcpy2DToArrayAsync(i->get_array(), 0, 0,
 			data, pitch,
 			w * 4, h,
 			memcpy_kind,
@@ -216,23 +212,6 @@ void Stitcher_impl::generate_masks(){
 	}
 }
 
-static void blit(Image *src, int src_x, int src_y,
-		Image *dst, int dst_x, int dst_y,
-		int w, int h)
-{
-	PROFILE_FUNC;
-#if 0
-	for(int y = src_y; y < h; y++){
-		unsigned char *src_p = src->data()
-			+ y * src->get_pitch() + src_x * src->get_bytes_per_px();
-		unsigned char *dst_p = dst->data() + y * dst->get_pitch()
-			+ dst_x * dst->get_bytes_per_px();
-
-		memcpy(dst_p, src_p, w * dst->get_bytes_per_px());
-	}
-#endif
-}
-
 static void cuda_blit(Image_cuda *src, int src_x, int src_y,
 		Image_cuda *dst, int dst_x, int dst_y,
 		int w, int h,
@@ -251,44 +230,6 @@ static void cuda_blit(Image_cuda *src, int src_x, int src_y,
 			w * src->get_bytes_per_px(), h,
 			cudaMemcpyDeviceToDevice,
 			stream);
-}
-
-
-static void blit_overlap(const Image *left, int l_start_x, int l_start_y,
-		const Image *right, int r_start_x, int r_start_y,
-		const Image *mask, int m_start_x, int m_start_y,
-		Image *dst, int dst_x, int dst_y,
-		int w, int h)
-{
-	PROFILE_FUNC;
-	for(int y = 0; y < h; y++){
-		for(int x = 0; x < w; x++){
-#if 0
-			unsigned char *dst_p = dst->data()
-				+ (y + dst_y) * dst->get_pitch()
-				+ (x + dst_x) * dst->get_bytes_per_px();
-			const unsigned char *src_l = left->data()
-				+ (y + l_start_y) * left->get_pitch()
-				+ (x + l_start_x) * left->get_bytes_per_px();
-			const unsigned char *src_r = right->data()
-				+ (y + r_start_y) * right->get_pitch()
-				+ (x + r_start_x) * right->get_bytes_per_px();
-			const unsigned char *src_m = mask->data()
-				+ (y + m_start_y) * mask->get_pitch()
-				+ (x + m_start_x) * mask->get_bytes_per_px();
-
-			dst_p[0] = src_l[0] - (src_l[0] * src_m[0]) / 255
-				+ (src_r[0] * src_m[0]) / 255;
-			dst_p[1] = src_l[1] - (src_l[1] * src_m[0]) / 255
-				+ (src_r[1] * src_m[0]) / 255;
-			dst_p[2] = src_l[2] - (src_l[2] * src_m[0]) / 255
-				+ (src_r[2] * src_m[0]) / 255;
-			dst_p[3] = src_l[3] - (src_l[3] * src_m[0]) / 255
-				+ (src_r[3] * src_m[0]) / 255;
-#endif
-
-		}
-	}
 }
 
 void Stitcher_impl::blend(){
