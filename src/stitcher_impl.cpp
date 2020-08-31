@@ -1,6 +1,7 @@
 #include <cmath>
 #include <cstring>
 #include <iostream>
+#include <time.h>
 #include <cuda_runtime.h>
 #include "stitcher_impl.hpp"
 #include "math_util.hpp"
@@ -261,27 +262,32 @@ void Stitcher_impl::blend(){
 		const Image_cuda *left = cam_ctxs[o.left_idx].get_projected_image();
 		const Image_cuda *right = cam_ctxs[o.right_idx].get_projected_image();
 
+		const int seam_width = 30;
 		if(o.start_x < o.end_x){
+			const int w = o.end_x - o.start_x;
+			const int seam_center = w / 2 + sin(clock() / 1000000.0) * 150;
 			cuda_blit_overlap(left, o.start_x, 0,
 					right, o.start_x, 0,
-					&o.mask, 0, 0,
+					seam_center, seam_width,
 					&output, o.start_x, 0,
-					o.end_x - o.start_x, output.get_height(),
+					w, output.get_height(),
 					out_stream
 					);
 		} else {
+			int w = output.get_width() - o.start_x;
 			cuda_blit_overlap(left, o.start_x, 0,
 					right, o.start_x, 0,
-					&o.mask, 0, 0,
+					w / 2, seam_width,
 					&output, o.start_x, 0,
-					output.get_width() - o.start_x, output.get_height(),
+					w, output.get_height(),
 					out_stream
 					);
+			w = o.end_x;
 			cuda_blit_overlap(left, 0, 0,
 					right, 0, 0,
-					&o.mask, 0, 0,
+					w / 2, seam_width,
 					&output, 0, 0,
-					o.end_x, output.get_height(),
+					w, output.get_height(),
 					out_stream
 					);
 		}
