@@ -41,7 +41,6 @@ Stitcher_impl::Stitcher_impl(Stitcher_params stitch_params,
 	tmp.upload(output);
 
 	find_overlaps();
-	generate_masks();
 }
 
 void Stitcher_impl::submit_input_image_async(size_t cam_idx){
@@ -174,38 +173,6 @@ void Stitcher_impl::find_overlaps(){
 	for(auto& overlap : overlaps){
 		cam_overlaps[overlap.left_idx].right = &overlap;
 		cam_overlaps[overlap.right_idx].left = &overlap;
-	}
-}
-
-void Stitcher_impl::generate_masks(){
-	PROFILE_FUNC;
-	int height = output.get_height();
-	for(auto& o : overlaps){
-		int width;
-		if(o.start_x < o.end_x){
-			width = o.end_x - o.start_x;
-		} else {
-			width = o.end_x + (output.get_width() - o.start_x);
-		}
-
-		o.mask = Image_cuda(width, height);
-		Image_cpu tmp(width, height);
-
-		for(int y = 0; y < height; y++){
-			for(int x = 0; x < width; x++){
-				unsigned char *p = static_cast<unsigned char*>(tmp.data())
-					+ y * tmp.get_pitch()
-					+ x * tmp.get_bytes_per_px();
-
-				int val = (255 * x) / width;
-				p[0] = val;
-				p[1] = val;
-				p[2] = val;
-				p[3] = val;
-			}
-		}
-
-		tmp.upload(o.mask);
 	}
 }
 
