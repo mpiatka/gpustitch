@@ -127,22 +127,20 @@ static double normalize_angle(double angle){
 	while(angle > 3.14) angle -= 2*3.14;
 	while(angle <= -3.14) angle += 2*3.14;
 	return angle;
-	/*
-	while(angle < 0) angle += 2 * 3.14;
-	angle = fmod(angle, 2 * 3.14);
+}
 
-	return angle;
-	*/
+static bool angle_is_between(double left, double angle, double right){
+	if(left > right)
+		return (-3.14 <= angle && angle < right) || (left < angle && angle < 3.14);
+
+	return left < angle && angle < right;
 }
 
 void Stitcher_impl::find_overlaps(){
 	for(size_t left_idx = 0; left_idx < cam_ctxs.size(); left_idx++){
 		const auto& left_cam = cam_ctxs[left_idx];
-		double left_start = normalize_angle(left_cam.proj_angle_start);
 		double left_end = normalize_angle(left_cam.proj_angle_end);
 		double left_center = normalize_angle(left_cam.cam_params.yaw);
-
-		if(left_center > left_end) left_center -= 2 * 3.14;
 
 		for(size_t right_idx = 0; right_idx < cam_ctxs.size(); right_idx++){
 			if(left_idx == right_idx)
@@ -150,10 +148,8 @@ void Stitcher_impl::find_overlaps(){
 
 			const auto& right_cam = cam_ctxs[right_idx];
 			double right_start = normalize_angle(right_cam.proj_angle_start);
-			double right_end = normalize_angle(right_cam.proj_angle_end);
-			double right_center = normalize_angle(right_cam.cam_params.yaw);
 
-			if(left_end > right_start && left_center < right_start){
+			if(angle_is_between(left_center, right_start, left_end)){
 				std::cout << "Found overlap: " << left_idx << ", " << right_idx;
 				std::cout << std::endl;
 				int start_x = stitcher_params.width / 2 * (1 + right_start / 3.14);
