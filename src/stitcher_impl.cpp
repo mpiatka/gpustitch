@@ -229,11 +229,28 @@ static void cuda_blit(Image_cuda *src, int src_x, int src_y,
 			stream);
 }
 
+int angle_to_px(size_t width, double angle){
+	return width / 2 * (1 + angle / 3.14);
+}
+
 void Stitcher_impl::blend(){
 	PROFILE_FUNC;
 	for(size_t i = 0; i < cam_ctxs.size(); i++){
-		int start_x = cam_overlaps[i].left->end_x;
-		int end_x = cam_overlaps[i].right->start_x;
+		Overlap *left_overlap = cam_overlaps[i].left;
+		Overlap *right_overlap = cam_overlaps[i].right;
+
+		int start_x;
+		int end_x;
+		if(left_overlap){
+			start_x = left_overlap->end_x;
+		} else {
+			start_x = angle_to_px(stitcher_params.width, cam_ctxs[i].proj_angle_start);
+		}
+		if(right_overlap){
+			end_x = right_overlap->start_x;
+		} else {
+			end_x = angle_to_px(stitcher_params.width, cam_ctxs[i].proj_angle_end);
+		}
 		cudaStreamSynchronize(cam_ctxs[i].in_stream);
 
 		if(end_x < start_x){
