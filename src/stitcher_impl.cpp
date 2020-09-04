@@ -8,6 +8,7 @@
 #include "project_cam.h"
 #include "blend.h"
 #include "profile_timer.hpp"
+#include "gaussian_kernel.hpp"
 
 namespace gpustitch{
 

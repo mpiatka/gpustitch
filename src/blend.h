@@ -2,6 +2,7 @@
 #define BLEND_H
 
 #include "gpustitch_common.hpp"
+#include "image.hpp"
 
 void cuda_blit_overlap(const gpustitch::Image_cuda *left, int l_start_x, int l_start_y,
 		const gpustitch::Image_cuda *right, int r_start_x, int r_start_y,

@@ -1,4 +1,7 @@
 #include "image.hpp"
+#include "gaussian_kernel.hpp"
+
+using namespace gpustitch;
 
 __global__
 void kern_blit_overlap(
@@ -48,7 +51,32 @@ void kern_blit_overlap(
 #endif
 }
 
-using namespace gpustitch;
+#define GAUSS_KERN_SIZE 7
+__constant__ float gauss_kern[GAUSS_KERN_SIZE];
+
+__global__
+void kern_gauss_blur(const unsigned char *src, int src_pitch,
+		int start_x, int start_y,
+		int w, int h)
+{
+	const int x = (blockIdx.x * blockDim.x) + threadIdx.x;
+	const int y = (blockIdx.y * blockDim.y) + threadIdx.y;
+
+	if(x >= w)
+		return;
+
+	if(y >= h)
+		return;
+
+	float4 val = make_float4(0, 0, 0, 0);
+	for(int i = 0; i < GAUSS_KERN_SIZE; i++){
+		int n = i - (GAUSS_KERN_SIZE / 2);
+		int sample_x = start_x + max(0, min(x + n, w));
+		uchar4 *src = (uchar4 *)(left + (l_start_y + y) * l_pitch + (l_start_x + x) * 4);
+
+		val.x += 
+	}
+}
 
 void cuda_blit_overlap(const Image_cuda *left, int l_start_x, int l_start_y,
 		const Image_cuda *right, int r_start_x, int r_start_y,
@@ -68,4 +96,20 @@ void cuda_blit_overlap(const Image_cuda *left, int l_start_x, int l_start_y,
 		seam_center, seam_width, seam_start, overlap_width,
 		(unsigned char *)dst->data(), dst_x, dst_y, dst->get_pitch(),
 		w, h);
+}
+
+void cuda_gaussian_blur(const Image_cuda *img, int start_x, int start_y,
+		int w, int h,
+		CUstream_st *stream)
+{
+	const float sigma = 1.4f;
+
+	static bool kern_initialized = false;
+	if(!kern_initialized){
+		Gaussian_kernel<GAUSS_KERN_SIZE> kern(sigma);
+
+		cudaMemcpyToSymbol("gauss_kern", kern.get(), sizeof(float) * GAUSS_KERN_SIZE);
+
+		kern_initialized = true;
+	}
 }
