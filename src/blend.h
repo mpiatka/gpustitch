@@ -11,8 +11,4 @@ void cuda_blit_overlap(const gpustitch::Image_cuda *left, int l_start_x, int l_s
 		int w, int h,
 		CUstream_st *stream);
 
-void cuda_gaussian_blur(const gpustitch::Image_cuda *img, int start_x, int start_y,
-		int w, int h,
-		CUstream_st *stream);
-
 #endif

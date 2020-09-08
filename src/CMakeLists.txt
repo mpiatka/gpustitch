@@ -8,6 +8,8 @@ set(SOURCES
 	blend.cu
 	config_utils.cpp
 	image_cuda_array.cpp
+	pyramid.cpp
+	gauss_laplace.cu
 	)
 
 add_library(gpustitch ${SOURCES})
