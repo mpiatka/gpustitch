@@ -11,15 +11,23 @@ void cuda_gaussian_blur(const gpustitch::Image_cuda *img, int start_x, int start
 void cuda_subtract_images(const gpustitch::Image_cuda *a,
 		const gpustitch::Image_cuda *b,
 		gpustitch::Image_cuda *result,
+		int w, int h,
 		CUstream_st *stream);
 
 void cuda_add_images(const gpustitch::Image_cuda *a,
 		const gpustitch::Image_cuda *b,
 		gpustitch::Image_cuda *result,
+		int w, int h,
 		CUstream_st *stream);
 
-void cuda_downsample(gpustitch::Image_cuda dst,
-		const gpustitch::Image_cuda src,
+void cuda_downsample(gpustitch::Image_cuda *dst,
+		const gpustitch::Image_cuda *src,
+		int w, int h,
+		CUstream_st *stream);
+
+void cuda_upsample(gpustitch::Image_cuda *dst,
+		const gpustitch::Image_cuda *src,
+		int w, int h,
 		CUstream_st *stream);
 
 #endif

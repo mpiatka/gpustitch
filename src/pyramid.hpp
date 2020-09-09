@@ -16,8 +16,12 @@ public:
 	Pyramid& operator=(const Pyramid&) = delete;
 	Pyramid& operator=(Pyramid&&) = default;
 
-	void construct(const Image_cuda& src,
+	void construct_from(const Image_cuda& src,
 			size_t x, size_t y, size_t w, size_t h,
+			CUstream_st *stream);
+
+	void reconstruct_to(Image_cuda *dst,
+			size_t x, size_t y,
 			CUstream_st *stream);
 
 private:

@@ -134,51 +134,57 @@ void kern_subtract_images(const unsigned char *a, int a_pitch,
 
 	const uchar4 *a_row = (uchar4 *) (a + y * a_pitch);
 	const uchar4 *b_row = (uchar4 *) (b + y * b_pitch);
-	uchar4 *res_row = (uchar4 *) (res + y * res_pitch);
+	char4 *res_row = (char4 *) (res + y * res_pitch);
 
-	res_row[x] = make_uchar4(
-			a_row[x].x - b_row[x].x,
-			a_row[x].y - b_row[x].y,
-			a_row[x].z - b_row[x].z,
-			255
+	if(x > w || y > h)
+		return;
+
+	res_row[x] = make_char4(
+			max(-128, min(127, a_row[x].x - b_row[x].x)),
+			max(-128, min(127, a_row[x].y - b_row[x].y)),
+			max(-128, min(127, a_row[x].z - b_row[x].z)),
+			0
 			);
 }
 
 void cuda_subtract_images(const gpustitch::Image_cuda *a,
 		const gpustitch::Image_cuda *b,
 		gpustitch::Image_cuda *result,
+		int w, int h,
 		CUstream_st *stream)
 {
 
 	dim3 blockSize(32, 32);
-	dim3 numBlocks((result->get_width() + blockSize.x - 1) / blockSize.x,
-			(result->get_height() + blockSize.y - 1) / blockSize.y);
+	dim3 numBlocks((w + blockSize.x - 1) / blockSize.x,
+			(h + blockSize.y - 1) / blockSize.y);
 
 	kern_subtract_images<<<numBlocks, blockSize, 0, stream>>>(
 			(const unsigned char *) a->data(), a->get_pitch(),
 			(const unsigned char *) b->data(), b->get_pitch(),
 			(char *) result->data(), result->get_pitch(),
-			result->get_width(), result->get_height());
+			w, h);
 }
 
 __global__
 void kern_add_images(const unsigned char *a, int a_pitch,
-		const unsigned char *b, int b_pitch,
-		char *res, int res_pitch,
+		const char *b, int b_pitch,
+		unsigned char *res, int res_pitch,
 		int w, int h)
 {
 	const int x = (blockIdx.x * blockDim.x) + threadIdx.x;
 	const int y = (blockIdx.y * blockDim.y) + threadIdx.y;
 
 	const uchar4 *a_row = (uchar4 *) (a + y * a_pitch);
-	const uchar4 *b_row = (uchar4 *) (b + y * b_pitch);
+	const char4 *b_row = (char4 *) (b + y * b_pitch);
 	uchar4 *res_row = (uchar4 *) (res + y * res_pitch);
 
-	//TODO bound check
+	if(x > w || y > h)
+		return;
+
 	res_row[x] = make_uchar4(
-			a_row[x].x + b_row[x].x,
-			a_row[x].y + b_row[x].y,
-			a_row[x].z + b_row[x].z,
+			max(0, min(255, a_row[x].x + b_row[x].x)),
+			max(0, min(255, a_row[x].y + b_row[x].y)),
+			max(0, min(255, a_row[x].z + b_row[x].z)),
 			255
 			);
 }
@@ -186,23 +192,25 @@ void kern_add_images(const unsigned char *a, int a_pitch,
 void cuda_add_images(const gpustitch::Image_cuda *a,
 		const gpustitch::Image_cuda *b,
 		gpustitch::Image_cuda *result,
+		int w, int h,
 		CUstream_st *stream)
 {
 
 	dim3 blockSize(32, 32);
-	dim3 numBlocks((result->get_width() + blockSize.x - 1) / blockSize.x,
-			(result->get_height() + blockSize.y - 1) / blockSize.y);
+	dim3 numBlocks((w + blockSize.x - 1) / blockSize.x,
+			(h + blockSize.y - 1) / blockSize.y);
 
 	kern_add_images<<<numBlocks, blockSize, 0, stream>>>(
 			(const unsigned char *) a->data(), a->get_pitch(),
-			(const unsigned char *) b->data(), b->get_pitch(),
-			(char *) result->data(), result->get_pitch(),
-			result->get_width(), result->get_height());
+			(const char *) b->data(), b->get_pitch(),
+			(unsigned char *) result->data(), result->get_pitch(),
+			w, h);
 }
 
 __global__
-void kern_downsample(const unsigned char *src, int src_pitch,
-		unsigned char *dst, int dst_pitch)
+void kern_downsample(unsigned char *dst, int dst_pitch,
+		const unsigned char *src, int src_pitch,
+		int w, int h)
 {
 	const int x = (blockIdx.x * blockDim.x) + threadIdx.x;
 	const int y = (blockIdx.y * blockDim.y) + threadIdx.y;
@@ -210,20 +218,31 @@ void kern_downsample(const unsigned char *src, int src_pitch,
 	const uchar4 *src_row = (uchar4 *) (src + y * 2 * src_pitch);
 	uchar4 *dst_row = (uchar4 *) (dst + y * dst_pitch);
 
-	//TODO bound check
+	if(x > w || y > h)
+		return;
+
 	dst_row[x] = src_row[2*x];
 }
 
-void cuda_downsample(gpustitch::Image_cuda dst,
-		const gpustitch::Image_cuda src,
+void cuda_downsample(gpustitch::Image_cuda *dst,
+		const gpustitch::Image_cuda *src,
+		int w, int h,
 		CUstream_st *stream)
 {
-	
+	dim3 blockSize(32, 32);
+	dim3 numBlocks((w/2 + blockSize.x - 1) / blockSize.x,
+			(h/2 + blockSize.y - 1) / blockSize.y);
+
+	kern_downsample<<<numBlocks, blockSize, 0, stream>>>(
+			(unsigned char *) dst->data(), dst->get_pitch(),
+			(const unsigned char *) src->data(), src->get_pitch(),
+			w, h);
 }
 
 __global__
-void kern_upsample(const unsigned char *src, int src_pitch,
-		unsigned char *dst, int dst_pitch)
+void kern_upsample(unsigned char *dst, int dst_pitch,
+		const unsigned char *src, int src_pitch,
+		int w, int h)
 {
 	const int x = (blockIdx.x * blockDim.x) + threadIdx.x;
 	const int y = (blockIdx.y * blockDim.y) + threadIdx.y;
@@ -231,6 +250,26 @@ void kern_upsample(const unsigned char *src, int src_pitch,
 	const uchar4 *src_row = (uchar4 *) (src + y/2 * src_pitch);
 	uchar4 *dst_row = (uchar4 *) (dst + y * dst_pitch);
 
-	//TODO bound check
+	if(x > w || y > h)
+		return;
+
 	dst_row[x] = src_row[x / 2];
+}
+
+void cuda_upsample(gpustitch::Image_cuda *dst,
+		const gpustitch::Image_cuda *src,
+		int w, int h,
+		CUstream_st *stream)
+{
+
+	int upsampled_w = 2 * w;
+	int upsampled_h = 2 * h;
+	dim3 blockSize(32, 32);
+	dim3 numBlocks((upsampled_w + blockSize.x - 1) / blockSize.x,
+			(upsampled_h + blockSize.y - 1) / blockSize.y);
+
+	kern_upsample<<<numBlocks, blockSize, 0, stream>>>(
+			(unsigned char *) dst->data(), dst->get_pitch(),
+			(const unsigned char *) src->data(), src->get_pitch(),
+			upsampled_w, upsampled_h);
 }
