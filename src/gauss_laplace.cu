@@ -126,7 +126,7 @@ void cuda_gaussian_blur(const Image_cuda *img, int start_x, int start_y,
 __global__
 void kern_subtract_images(const unsigned char *a, int a_pitch,
 		const unsigned char *b, int b_pitch,
-		char *res, int res_pitch,
+		const unsigned char *res, int res_pitch,
 		int w, int h)
 {
 	const int x = (blockIdx.x * blockDim.x) + threadIdx.x;
@@ -134,15 +134,15 @@ void kern_subtract_images(const unsigned char *a, int a_pitch,
 
 	const uchar4 *a_row = (uchar4 *) (a + y * a_pitch);
 	const uchar4 *b_row = (uchar4 *) (b + y * b_pitch);
-	char4 *res_row = (char4 *) (res + y * res_pitch);
+	uchar4 *res_row = (uchar4 *) (res + y * res_pitch);
 
 	if(x > w || y > h)
 		return;
 
-	res_row[x] = make_char4(
-			max(-128, min(127, a_row[x].x - b_row[x].x)),
-			max(-128, min(127, a_row[x].y - b_row[x].y)),
-			max(-128, min(127, a_row[x].z - b_row[x].z)),
+	res_row[x] = make_uchar4(
+			max(0, min(255, 128 + a_row[x].x - b_row[x].x)),
+			max(0, min(255, 128 + a_row[x].y - b_row[x].y)),
+			max(0, min(255, 128 + a_row[x].z - b_row[x].z)),
 			0
 			);
 }
@@ -161,30 +161,30 @@ void cuda_subtract_images(const gpustitch::Image_cuda *a,
 	kern_subtract_images<<<numBlocks, blockSize, 0, stream>>>(
 			(const unsigned char *) a->data(), a->get_pitch(),
 			(const unsigned char *) b->data(), b->get_pitch(),
-			(char *) result->data(), result->get_pitch(),
+			(unsigned char *) result->data(), result->get_pitch(),
 			w, h);
 }
 
 __global__
-void kern_add_images(const unsigned char *a, int a_pitch,
-		const char *b, int b_pitch,
+void kern_add_images(const unsigned char *low, int low_pitch,
+		const unsigned char *high, int high_pitch,
 		unsigned char *res, int res_pitch,
 		int w, int h)
 {
 	const int x = (blockIdx.x * blockDim.x) + threadIdx.x;
 	const int y = (blockIdx.y * blockDim.y) + threadIdx.y;
 
-	const uchar4 *a_row = (uchar4 *) (a + y * a_pitch);
-	const char4 *b_row = (char4 *) (b + y * b_pitch);
+	const uchar4 *low_row = (uchar4 *) (low + y * low_pitch);
+	const uchar4 *high_row = (uchar4 *) (high + y * high_pitch);
 	uchar4 *res_row = (uchar4 *) (res + y * res_pitch);
 
 	if(x > w || y > h)
 		return;
 
 	res_row[x] = make_uchar4(
-			max(0, min(255, a_row[x].x + b_row[x].x)),
-			max(0, min(255, a_row[x].y + b_row[x].y)),
-			max(0, min(255, a_row[x].z + b_row[x].z)),
+			max(0, min(255, low_row[x].x + (high_row[x].x - 128))),
+			max(0, min(255, low_row[x].y + (high_row[x].y - 128))),
+			max(0, min(255, low_row[x].z + (high_row[x].z - 128))),
 			255
 			);
 }
@@ -202,7 +202,7 @@ void cuda_add_images(const gpustitch::Image_cuda *a,
 
 	kern_add_images<<<numBlocks, blockSize, 0, stream>>>(
 			(const unsigned char *) a->data(), a->get_pitch(),
-			(const char *) b->data(), b->get_pitch(),
+			(const unsigned char *) b->data(), b->get_pitch(),
 			(unsigned char *) result->data(), result->get_pitch(),
 			w, h);
 }
