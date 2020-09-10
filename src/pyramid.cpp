@@ -38,6 +38,7 @@ void Pyramid::construct_from(const Image_cuda& src,
 
 	for(unsigned i = 0; i < levels - 1; i++){
 		auto& laplacian = laplace_imgs[i];
+		auto& laplacian_next = laplace_imgs[i + 1];
 
 		res = cudaMemcpy2DAsync(tmp_blurred.data(), tmp_blurred.get_pitch(),
 				tmp.data(), tmp.get_pitch(),
@@ -50,12 +51,27 @@ void Pyramid::construct_from(const Image_cuda& src,
 				laplacian.get_width(), laplacian.get_height(),
 				stream);
 
+		cuda_downsample(&laplacian_next, &tmp_blurred,
+				laplacian.get_width(), laplacian.get_height(),
+				stream);
+
+		cuda_upsample(&tmp_blurred, &laplacian_next,
+				laplacian_next.get_width(), laplacian_next.get_width(),
+				stream);
+
+		cuda_gaussian_blur(&tmp_blurred,
+				0, 0,
+				laplacian.get_width(), laplacian.get_height(),
+				stream);
+
 		cuda_subtract_images(&tmp, &tmp_blurred,
 				&laplacian, laplacian.get_width(), laplacian.get_height(),
 				stream);
 
-		cuda_downsample(&tmp, &tmp_blurred,
-				laplacian.get_width(), laplacian.get_height(),
+		res = cudaMemcpy2DAsync(tmp.data(), tmp.get_pitch(),
+				laplacian_next.data(), laplacian_next.get_pitch(),
+				laplacian_next.get_width() * 4, laplacian_next.get_height(),
+				cudaMemcpyDeviceToDevice,
 				stream);
 	}
 
