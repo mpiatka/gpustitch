@@ -182,19 +182,14 @@ static void cuda_blit(Image_cuda *src, int src_x, int src_y,
 		int w, int h,
 		cudaStream_t stream)
 {
-	unsigned char *from = static_cast<unsigned char*>(src->data())
-		+ (src_y * src->get_pitch())
-		+ (src_x * src->get_bytes_per_px());
+	copy_image(dst, src, dst_x, dst_y, src_x, src_y, w, h, stream);
 
-	unsigned char *to = static_cast<unsigned char*>(dst->data())
-		+ (dst_y * dst->get_pitch())
-		+ (dst_x * dst->get_bytes_per_px());
+	cudaStreamSynchronize(stream);
+	cudaError_t err = cudaGetLastError();
 
-	cudaMemcpy2DAsync(to, dst->get_pitch(),
-			from, src->get_pitch(),
-			w * src->get_bytes_per_px(), h,
-			cudaMemcpyDeviceToDevice,
-			stream);
+	if(err != cudaSuccess){
+		std::cerr << cudaGetErrorString(err) << std::endl;
+	}
 }
 
 int angle_to_px(size_t width, double angle){

@@ -1,3 +1,4 @@
+#include <cassert>
 #include <cuda_runtime.h>
 #include "image.hpp"
 #include "profile_timer.hpp"
@@ -96,6 +97,32 @@ void Image_cpu::upload(Image_cuda& dst){
 			cudaMemcpyHostToDevice); //TODO specify stream
 
 	cudaStreamSynchronize(0);
+}
+
+void copy_image(Image_cuda *dst, const Image_cuda *src,
+		int dst_x, int dst_y, int src_x, int src_y, int w, int h,
+		CUstream_st *stream)
+{
+	assert(dst_x + w <= dst->get_width());
+	assert(dst_y + h <= dst->get_height());
+	assert(src_x + w <= src->get_width());
+	assert(src_y + h <= src->get_height());
+	assert(dst->get_bytes_per_px() == src->get_bytes_per_px());
+
+	const unsigned char *src_p = static_cast<const unsigned char *>(src->data())
+		+ src_y * src->get_pitch()
+		+ src_x * src->get_bytes_per_px();
+
+	unsigned char *dst_p = static_cast<unsigned char *>(dst->data())
+		+ dst_y * dst->get_pitch()
+		+ dst_x * dst->get_bytes_per_px();
+
+	cudaError_t res;
+	res = cudaMemcpy2DAsync(dst_p, dst->get_pitch(),
+			src_p, src->get_pitch(),
+			w * dst->get_bytes_per_px(), h,
+			cudaMemcpyDeviceToDevice,
+			stream);
 }
 
 }

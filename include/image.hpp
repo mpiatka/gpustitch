@@ -65,6 +65,10 @@ private:
 	
 };
 
+void copy_image(Image_cuda *dst, const Image_cuda *src,
+		int dst_x, int dst_y, int src_x, int src_y, int w, int h,
+		CUstream_st *stream);
+
 }
 
 

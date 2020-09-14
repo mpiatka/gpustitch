@@ -30,20 +30,15 @@ void Pyramid::construct_from(const Image_cuda& src,
 		+ y * src.get_pitch()
 		+ x * src.get_bytes_per_px();
 
-	res = cudaMemcpy2DAsync(tmp.data(), tmp.get_pitch(),
-			src_p, src.get_pitch(),
-			w * 4, h,
-			cudaMemcpyDeviceToDevice,
-			stream);
+
+	copy_image(&tmp, &src, 0, 0, x, y, w, h, stream);
 
 	for(unsigned i = 0; i < levels - 1; i++){
 		auto& laplacian = laplace_imgs[i];
 		auto& laplacian_next = laplace_imgs[i + 1];
 
-		res = cudaMemcpy2DAsync(tmp_blurred.data(), tmp_blurred.get_pitch(),
-				tmp.data(), tmp.get_pitch(),
-				laplacian.get_width() * 4, laplacian.get_height(),
-				cudaMemcpyDeviceToDevice,
+		copy_image(&tmp_blurred, &tmp, 0, 0, 0, 0,
+				laplacian.get_width(), laplacian.get_height(),
 				stream);
 
 		cuda_gaussian_blur(&tmp_blurred,
@@ -68,19 +63,13 @@ void Pyramid::construct_from(const Image_cuda& src,
 				&laplacian, laplacian.get_width(), laplacian.get_height(),
 				stream);
 
-		res = cudaMemcpy2DAsync(tmp.data(), tmp.get_pitch(),
-				laplacian_next.data(), laplacian_next.get_pitch(),
-				laplacian_next.get_width() * 4, laplacian_next.get_height(),
-				cudaMemcpyDeviceToDevice,
+		copy_image(&tmp, &laplacian_next, 0, 0, 0, 0,
+				laplacian_next.get_width(), laplacian_next.get_height(),
 				stream);
 	}
 
 	auto& base = laplace_imgs[levels-1];
-	res = cudaMemcpy2DAsync(base.data(), base.get_pitch(),
-			tmp.data(), tmp.get_pitch(),
-			base.get_width() * 4, base.get_height(),
-			cudaMemcpyDeviceToDevice,
-			stream);
+	copy_image(&base, &tmp, 0, 0, 0, 0, base.get_width(), base.get_height(), stream);
 }
 
 void Pyramid::reconstruct_to(Image_cuda *dst,
@@ -91,11 +80,7 @@ void Pyramid::reconstruct_to(Image_cuda *dst,
 #if 1
 	auto& base = laplace_imgs[levels-1];
 
-	res = cudaMemcpy2DAsync(tmp.data(), tmp.get_pitch(),
-			base.data(), base.get_pitch(),
-			base.get_width() * 4, base.get_height(),
-			cudaMemcpyDeviceToDevice,
-			stream);
+	copy_image(&tmp, &base, x, y, 0, 0, base.get_width(), base.get_height(), stream);
 
 	int w = base.get_width();
 	int h = base.get_height();
