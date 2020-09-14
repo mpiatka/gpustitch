@@ -10,6 +10,7 @@ set(SOURCES
 	image_cuda_array.cpp
 	pyramid.cpp
 	gauss_laplace.cu
+	cuda_stream.cpp
 	)
 
 add_library(gpustitch ${SOURCES})

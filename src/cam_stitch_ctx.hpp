@@ -9,6 +9,7 @@
 #include "math_util.hpp"
 #include "profile_timer.hpp"
 #include "gpustitch_common.hpp"
+#include "cuda_stream.hpp"
 
 namespace gpustitch{
 
@@ -30,9 +31,6 @@ public:
 		double half_fov = (double) cam_params.height / 2 / cam_params.focal_len; //TODO
 		proj_angle_start = yaw_center - half_fov;
 		proj_angle_end = yaw_center + half_fov;
-
-		cudaStreamCreate(&in_stream);
-
    	}
 
 	Image_cuda_array *get_input_image() { return &in_array; }
@@ -46,7 +44,7 @@ public:
 
 	Image_cuda_array in_array;
 
-	CUstream_st *in_stream;
+	Cuda_stream in_stream;
 
 	double proj_angle_start;
 	double proj_angle_end;

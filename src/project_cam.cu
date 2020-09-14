@@ -85,7 +85,7 @@ void cuda_project_cam(gpustitch::Cam_stitch_ctx& cam_ctx,
 	dim3 numBlocks((w + blockSize.x - 1) / blockSize.x,
 			(h + blockSize.y - 1) / blockSize.y);
 
-	kern_proj_cam<<<numBlocks, blockSize, 0, cam_ctx.in_stream>>>
+	kern_proj_cam<<<numBlocks, blockSize, 0, cam_ctx.in_stream.get()>>>
 		((unsigned char *)out->data(), out_w, out_h, out->get_pitch(),
 		 in->get_tex_obj(), in->get_width(), in->get_height(),
 		 cam_params,

@@ -7,6 +7,7 @@
 #include "image.hpp"
 #include "overlap.hpp"
 #include "stitcher.hpp"
+#include "cuda_stream.hpp"
 
 namespace gpustitch{
 
@@ -47,8 +48,7 @@ private:
 
 	Image_cuda output;
 
-	//TODO RAII stream wrapper
-	CUstream_st *out_stream;
+	Cuda_stream out_stream;
 
 	void project_cam(Cam_stitch_ctx& cam_ctx);
 

@@ -22,8 +22,6 @@ Stitcher_impl::Stitcher_impl(Stitcher_params stitch_params,
 		cam_ctxs.emplace_back(stitch_params, cam_param);
 	}
 
-	cudaStreamCreate(&out_stream);
-
 	PROFILE_DETAIL("init image");
 	Image_cpu tmp(stitcher_params.width, stitcher_params.height);
 	for(size_t y = 0; y < tmp.get_height(); y++){
@@ -55,7 +53,7 @@ void Stitcher_impl::submit_input_image(size_t cam_idx, const void *data,
 {
 	Cam_stitch_ctx& cam_ctx = cam_ctxs[cam_idx];
 	submit_input_image_async(cam_idx, data, w, h, pitch, mem_kind);
-	cudaStreamSynchronize(cam_ctx.in_stream);
+	cam_ctx.in_stream.synchronize();
 }
 
 void Stitcher_impl::submit_input_image_async(size_t cam_idx, const void *data,
@@ -73,24 +71,24 @@ void Stitcher_impl::submit_input_image_async(size_t cam_idx, const void *data,
 			data, pitch,
 			w * 4, h,
 			memcpy_kind,
-			cam_ctx.in_stream);
+			cam_ctx.in_stream.get());
 
 	submit_input_image_async(cam_idx);
 }
 
 void Stitcher_impl::get_input_stream(size_t cam_idx, CUstream_st **stream) const{
-	*stream = cam_ctxs[cam_idx].in_stream;
+	*stream = cam_ctxs[cam_idx].in_stream.get();
 }
 
 void Stitcher_impl::get_output_stream(CUstream_st **stream) const{
-	*stream = out_stream;
+	*stream = out_stream.get();
 }
 
 void Stitcher_impl::download_stitched(void *dst, size_t pitch){
 	Image_cuda *i = get_output_image();
 	//Image_cuda *i = cam_ctxs[0].get_projected_image();
 
-	cudaStreamSynchronize(out_stream);
+	out_stream.synchronize();
 
 	cudaMemcpy2D(dst, pitch,
 			i->data(), i->get_pitch(),
@@ -214,22 +212,22 @@ void Stitcher_impl::blend(){
 		} else {
 			end_x = angle_to_px(stitcher_params.width, cam_ctxs[i].proj_angle_end);
 		}
-		cudaStreamSynchronize(cam_ctxs[i].in_stream);
+		cam_ctxs[i].in_stream.synchronize();
 
 		if(end_x < start_x){
 			cuda_blit(cam_ctxs[i].get_projected_image(), start_x, 0,
 					&output, start_x, 0,
 					output.get_width() - start_x, output.get_height(),
-					out_stream);
+					out_stream.get());
 			cuda_blit(cam_ctxs[i].get_projected_image(), 0, 0,
 					&output, 0, 0,
 					end_x, output.get_height(),
-					out_stream);
+					out_stream.get());
 		} else {
 			cuda_blit(cam_ctxs[i].get_projected_image(), start_x, 0,
 					&output, start_x, 0,
 					end_x - start_x, output.get_height(),
-					out_stream);
+					out_stream.get());
 		}
 
 	}
@@ -251,7 +249,7 @@ void Stitcher_impl::blend(){
 					seam_center, seam_width, 0, overlap_width,
 					&output, o.start_x, 0,
 					w, output.get_height(),
-					out_stream
+					out_stream.get()
 					);
 		} else {
 			int w = output.get_width() - o.start_x;
@@ -260,7 +258,7 @@ void Stitcher_impl::blend(){
 					seam_center, seam_width, 0, overlap_width,
 					&output, o.start_x, 0,
 					w, output.get_height(),
-					out_stream
+					out_stream.get()
 					);
 			w = o.end_x;
 			cuda_blit_overlap(left, 0, 0,
@@ -268,7 +266,7 @@ void Stitcher_impl::blend(){
 					seam_center, seam_width, output.get_width() - o.start_x, overlap_width,
 					&output, 0, 0,
 					w, output.get_height(),
-					out_stream
+					out_stream.get()
 					);
 		}
 	}
