@@ -1,3 +1,4 @@
+#include <utility>
 #include <cuda_runtime.h>
 #include "cuda_stream.hpp"
 
@@ -12,14 +13,12 @@ Cuda_stream::~Cuda_stream(){
 		cudaStreamDestroy(stream);
 }
 
-Cuda_stream::Cuda_stream(Cuda_stream&& o){
-	stream = o.stream;
+Cuda_stream::Cuda_stream(Cuda_stream&& o) : stream(o.stream){
 	o.stream = 0;
 }
 
 Cuda_stream& Cuda_stream::operator=(Cuda_stream&& o){
-	stream = o.stream;
-	o.stream = 0;
+	std::swap(stream, o.stream);
 }
 
 void Cuda_stream::synchronize() const{

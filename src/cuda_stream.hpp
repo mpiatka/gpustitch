@@ -18,7 +18,7 @@ public:
 	void synchronize() const;
 
 private:
-	CUstream_st *stream;
+	CUstream_st *stream = 0;
 
 };
 
