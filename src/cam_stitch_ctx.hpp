@@ -35,6 +35,7 @@ public:
 
 	Image_cuda_array *get_input_image() { return &in_array; }
 	Image_cuda *get_projected_image() { return &projected; }
+	const Image_cuda *get_projected_image() const { return &projected; }
 	const Cam_params& get_cam_params() const { return cam_params; }
 	const float *get_rot_mat() const { return cam_params.rot_mat; }
 

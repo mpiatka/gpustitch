@@ -8,6 +8,7 @@
 #include "overlap.hpp"
 #include "stitcher.hpp"
 #include "cuda_stream.hpp"
+#include "blender.hpp"
 
 namespace gpustitch{
 
@@ -50,9 +51,11 @@ private:
 
 	Cuda_stream out_stream;
 
+	std::unique_ptr<Blender> blender;
+
 	void project_cam(Cam_stitch_ctx& cam_ctx);
 
-	void blend();
+	void copy_non_overlaping();
 
 	void find_overlaps();
 	void generate_masks();

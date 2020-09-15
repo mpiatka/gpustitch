@@ -15,7 +15,7 @@ namespace gpustitch{
 Stitcher_impl::Stitcher_impl(Stitcher_params stitch_params,
 		const std::vector<Cam_params>& cam_params) :
 	stitcher_params(stitch_params),
-	output(stitch_params.width, stitch_params.height)
+	output(stitch_params.width, stitch_params.height),
 {
 	PROFILE_FUNC;
 	for(const auto& cam_param : cam_params){
@@ -40,6 +40,8 @@ Stitcher_impl::Stitcher_impl(Stitcher_params stitch_params,
 	tmp.upload(output);
 
 	find_overlaps();
+
+	blender = std::unique_ptr<Blender>(new Feather_blender(overlaps));
 }
 
 void Stitcher_impl::submit_input_image_async(size_t cam_idx){
@@ -175,7 +177,7 @@ void Stitcher_impl::find_overlaps(){
 	}
 }
 
-static void cuda_blit(Image_cuda *src, int src_x, int src_y,
+static void cuda_blit(const Image_cuda *src, int src_x, int src_y,
 		Image_cuda *dst, int dst_x, int dst_y,
 		int w, int h,
 		cudaStream_t stream)
@@ -194,7 +196,7 @@ int angle_to_px(size_t width, double angle){
 	return width / 2 * (1 + angle / 3.14);
 }
 
-void Stitcher_impl::blend(){
+void Stitcher_impl::copy_non_overlaping(){
 	PROFILE_FUNC;
 	for(size_t i = 0; i < cam_ctxs.size(); i++){
 		Overlap *left_overlap = cam_overlaps[i].left;
@@ -229,51 +231,12 @@ void Stitcher_impl::blend(){
 					end_x - start_x, output.get_height(),
 					out_stream.get());
 		}
-
-	}
-
-	for(const auto& o : overlaps){
-		const Image_cuda *left = cam_ctxs[o.left_idx].get_projected_image();
-		const Image_cuda *right = cam_ctxs[o.right_idx].get_projected_image();
-
-		const int seam_width = 30;
-
-		int overlap_width = (o.start_x < o.end_x) ? o.end_x - o.start_x : output.get_width() - o.start_x + o.end_x;
-
-		const int seam_center = overlap_width / 2 + sin(clock() / 1000000.0) * 150;
-
-		if(o.start_x < o.end_x){
-			const int w = o.end_x - o.start_x;
-			cuda_blit_overlap(left, o.start_x, 0,
-					right, o.start_x, 0,
-					seam_center, seam_width, 0, overlap_width,
-					&output, o.start_x, 0,
-					w, output.get_height(),
-					out_stream.get()
-					);
-		} else {
-			int w = output.get_width() - o.start_x;
-			cuda_blit_overlap(left, o.start_x, 0,
-					right, o.start_x, 0,
-					seam_center, seam_width, 0, overlap_width,
-					&output, o.start_x, 0,
-					w, output.get_height(),
-					out_stream.get()
-					);
-			w = o.end_x;
-			cuda_blit_overlap(left, 0, 0,
-					right, 0, 0,
-					seam_center, seam_width, output.get_width() - o.start_x, overlap_width,
-					&output, 0, 0,
-					w, output.get_height(),
-					out_stream.get()
-					);
-		}
 	}
 }
 
 void Stitcher_impl::stitch(){
-	blend();
+	copy_non_overlaping();
+	blender->blend_overlaps(&output, cam_ctxs, out_stream);
 }
 
 

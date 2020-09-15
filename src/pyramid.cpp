@@ -100,14 +100,12 @@ void Pyramid::reconstruct_to(Image_cuda *dst,
 	cuda_add_images(&tmp_blurred, &laplace_imgs[0], dst, w, h, stream);
 
 #else
-	/*
 	res = cudaMemcpy2DAsync(dst->data(), dst->get_pitch(),
 			laplace_imgs[0].data(), laplace_imgs[0].get_pitch(),
 			laplace_imgs[0].get_width() * 4, laplace_imgs[0].get_height(),
 			cudaMemcpyDeviceToDevice,
 			stream);
-			*/
-	cuda_upsample(dst, &laplace_imgs[1], 1024, 1024, stream);
+	//cuda_upsample(dst, &laplace_imgs[1], 1024, 1024, stream);
 #endif
 }
 

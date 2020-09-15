@@ -11,6 +11,7 @@ set(SOURCES
 	pyramid.cpp
 	gauss_laplace.cu
 	cuda_stream.cpp
+	blender.cpp
 	)
 
 add_library(gpustitch ${SOURCES})
