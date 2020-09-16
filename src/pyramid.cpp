@@ -22,7 +22,7 @@ Pyramid::Pyramid(size_t w, size_t h, unsigned levels) :
 
 void Pyramid::construct_from(const Image_cuda& src,
 			size_t x, size_t y, size_t w, size_t h,
-			CUstream_st *stream)
+			const Cuda_stream& stream)
 {
 	cudaError_t res;
 
@@ -44,24 +44,24 @@ void Pyramid::construct_from(const Image_cuda& src,
 		cuda_gaussian_blur(&tmp_blurred,
 				0, 0,
 				laplacian.get_width(), laplacian.get_height(),
-				stream);
+				stream.get());
 
 		cuda_downsample(&laplacian_next, &tmp_blurred,
 				laplacian.get_width(), laplacian.get_height(),
-				stream);
+				stream.get());
 
 		cuda_upsample(&tmp_blurred, &laplacian_next,
 				laplacian_next.get_width(), laplacian_next.get_width(),
-				stream);
+				stream.get());
 
 		cuda_gaussian_blur(&tmp_blurred,
 				0, 0,
 				laplacian.get_width(), laplacian.get_height(),
-				stream);
+				stream.get());
 
 		cuda_subtract_images(&tmp, &tmp_blurred,
 				&laplacian, laplacian.get_width(), laplacian.get_height(),
-				stream);
+				stream.get());
 
 		copy_image(&tmp, &laplacian_next, 0, 0, 0, 0,
 				laplacian_next.get_width(), laplacian_next.get_height(),
@@ -73,8 +73,8 @@ void Pyramid::construct_from(const Image_cuda& src,
 }
 
 void Pyramid::reconstruct_to(Image_cuda *dst,
-		size_t x, size_t y,
-		CUstream_st *stream)
+		size_t x, size_t y, size_t w, size_t h,
+		const Cuda_stream& stream)
 {
 	cudaError_t res;
 #if 1
@@ -82,22 +82,22 @@ void Pyramid::reconstruct_to(Image_cuda *dst,
 
 	copy_image(&tmp, &base, x, y, 0, 0, base.get_width(), base.get_height(), stream);
 
-	int w = base.get_width();
-	int h = base.get_height();
+	int curr_w = base.get_width();
+	int curr_h = base.get_height();
 
 	for(unsigned i = levels - 2; i > 0; i--){
-		cuda_upsample(&tmp_blurred, &tmp, w, h, stream);
-		w *= 2;
-		h *= 2;
-		cuda_gaussian_blur(&tmp_blurred, 0, 0, w, h, stream);
-		cuda_add_images(&tmp_blurred, &laplace_imgs[i], &tmp, w, h, stream);
+		cuda_upsample(&tmp_blurred, &tmp, curr_w, curr_h, stream.get());
+		curr_w *= 2;
+		curr_h *= 2;
+		cuda_gaussian_blur(&tmp_blurred, 0, 0, curr_w, curr_h, stream.get());
+		cuda_add_images(&tmp_blurred, &laplace_imgs[i], &tmp, curr_w, curr_h, stream.get());
 	}
 
-	cuda_upsample(&tmp_blurred, &tmp, w, h, stream);
-	w *= 2;
-	h *= 2;
-	cuda_gaussian_blur(&tmp_blurred, 0, 0, w, h, stream);
-	cuda_add_images(&tmp_blurred, &laplace_imgs[0], dst, w, h, stream);
+	cuda_upsample(&tmp_blurred, &tmp, curr_w, curr_h, stream.get());
+	curr_w *= 2;
+	curr_h *= 2;
+	cuda_gaussian_blur(&tmp_blurred, 0, 0, curr_w, curr_h, stream.get());
+	cuda_add_images(&tmp_blurred, &laplace_imgs[0], dst, w, h, stream.get());
 
 #else
 	res = cudaMemcpy2DAsync(dst->data(), dst->get_pitch(),

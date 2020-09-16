@@ -4,6 +4,7 @@
 #include <vector>
 #include "gpustitch_common.hpp"
 #include "image.hpp"
+#include "cuda_stream.hpp"
 
 namespace gpustitch{
 
@@ -18,11 +19,11 @@ public:
 
 	void construct_from(const Image_cuda& src,
 			size_t x, size_t y, size_t w, size_t h,
-			CUstream_st *stream);
+			const Cuda_stream& stream);
 
 	void reconstruct_to(Image_cuda *dst,
-			size_t x, size_t y,
-			CUstream_st *stream);
+			size_t x, size_t y, size_t w, size_t h,
+			const Cuda_stream& stream);
 
 private:
 	size_t width;

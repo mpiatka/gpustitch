@@ -41,7 +41,7 @@ Stitcher_impl::Stitcher_impl(Stitcher_params stitch_params,
 
 	find_overlaps();
 
-	blender = std::unique_ptr<Blender>(new Feather_blender(overlaps));
+	blender = std::unique_ptr<Blender>(new Feather_blender(stitcher_params, overlaps));
 }
 
 void Stitcher_impl::submit_input_image_async(size_t cam_idx){
@@ -165,6 +165,11 @@ void Stitcher_impl::find_overlaps(){
 				o.start_x = start_x;
 				o.end_x = end_x;
 
+				if(end_x > start_x)
+					o.width = end_x - start_x;
+				else
+					o.width = end_x + (stitcher_params.width - start_x);
+
 				overlaps.push_back(std::move(o));
 			}
 		}
@@ -180,11 +185,11 @@ void Stitcher_impl::find_overlaps(){
 static void cuda_blit(const Image_cuda *src, int src_x, int src_y,
 		Image_cuda *dst, int dst_x, int dst_y,
 		int w, int h,
-		cudaStream_t stream)
+		const Cuda_stream& stream)
 {
 	copy_image(dst, src, dst_x, dst_y, src_x, src_y, w, h, stream);
 
-	cudaStreamSynchronize(stream);
+	stream.synchronize();
 	cudaError_t err = cudaGetLastError();
 
 	if(err != cudaSuccess){
@@ -220,16 +225,16 @@ void Stitcher_impl::copy_non_overlaping(){
 			cuda_blit(cam_ctxs[i].get_projected_image(), start_x, 0,
 					&output, start_x, 0,
 					output.get_width() - start_x, output.get_height(),
-					out_stream.get());
+					out_stream);
 			cuda_blit(cam_ctxs[i].get_projected_image(), 0, 0,
 					&output, 0, 0,
 					end_x, output.get_height(),
-					out_stream.get());
+					out_stream);
 		} else {
 			cuda_blit(cam_ctxs[i].get_projected_image(), start_x, 0,
 					&output, start_x, 0,
 					end_x - start_x, output.get_height(),
-					out_stream.get());
+					out_stream);
 		}
 	}
 }

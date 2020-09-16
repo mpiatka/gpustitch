@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "gpustitch_common.hpp"
+#include "cuda_stream.hpp"
 
 namespace gpustitch{
 
@@ -67,7 +68,7 @@ private:
 
 void copy_image(Image_cuda *dst, const Image_cuda *src,
 		int dst_x, int dst_y, int src_x, int src_y, int w, int h,
-		CUstream_st *stream);
+		const Cuda_stream& stream);
 
 }
 

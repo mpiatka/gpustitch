@@ -101,7 +101,7 @@ void Image_cpu::upload(Image_cuda& dst){
 
 void copy_image(Image_cuda *dst, const Image_cuda *src,
 		int dst_x, int dst_y, int src_x, int src_y, int w, int h,
-		CUstream_st *stream)
+		const Cuda_stream& stream)
 {
 	assert(dst_x + w <= dst->get_width());
 	assert(dst_y + h <= dst->get_height());
@@ -122,7 +122,7 @@ void copy_image(Image_cuda *dst, const Image_cuda *src,
 			src_p, src->get_pitch(),
 			w * dst->get_bytes_per_px(), h,
 			cudaMemcpyDeviceToDevice,
-			stream);
+			stream.get());
 }
 
 }

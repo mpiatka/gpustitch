@@ -5,10 +5,13 @@
 
 namespace gpustitch{
 
-Blender::Blender(const std::vector<Overlap>& overlaps) : overlaps(overlaps) {  }
+Blender::Blender(const Stitcher_params& params,
+		const std::vector<Overlap>& overlaps) :
+	params(params), overlaps(overlaps) {  }
 
-Feather_blender::Feather_blender(const std::vector<Overlap>& overlaps) :
-	Blender(overlaps)
+Feather_blender::Feather_blender(const Stitcher_params& params,
+		const std::vector<Overlap>& overlaps) :
+	Blender(params, overlaps)
 { 
 
 }
@@ -55,6 +58,68 @@ void Feather_blender::blend_overlaps(Image_cuda *output,
 					stream.get()
 					);
 		}
+	}
+}
+
+static size_t get_max_width(const std::vector<Overlap>& overlaps){
+	size_t max_w = 0;
+
+	for(const auto& o : overlaps){
+		if(o.width > max_w)
+			max_w = o.width;
+	}
+
+	return max_w;
+}
+
+Multiband_blender::Multiband_blender(const Stitcher_params& params,
+		const std::vector<Overlap>& overlaps) :
+	Blender(params, overlaps),
+	tmp(get_max_width(overlaps), params.height, 4)
+{
+	for(const auto& o : overlaps){
+		Overlap_pyramid in_pyramid{
+			Pyramid(o.width, params.height, 4),
+			Pyramid(o.width, params.height, 4)
+		};
+
+		overlap_pyramids.emplace_back(std::move(in_pyramid));
+	}
+
+}
+
+void Multiband_blender::submit_image(const Image_cuda& in,
+		size_t idx,
+		const Cuda_stream& stream)
+{
+	for(size_t i = 0; i < overlaps.size(); i++){
+		const auto& o = overlaps[i];
+		auto& pyramids = overlap_pyramids[i];
+		//TODO handle wrap-around case
+		if(idx == o.left_idx){
+			pyramids.left.construct_from(in,
+					o.start_x, 0, o.width, params.height,
+					stream);
+		}
+		if(idx == o.right_idx){
+			pyramids.right.construct_from(in,
+					o.start_x, 0, o.width, params.height,
+					stream);
+		}
+	}
+}
+
+void Multiband_blender::blend_overlaps(Image_cuda *output,
+			const std::vector<Cam_stitch_ctx>& cam_ctxs,
+			const Cuda_stream& stream)
+{
+	for(size_t i = 0; i < overlaps.size(); i++){
+		const auto& o = overlaps[i];
+		const auto& pyramid = overlap_pyramids[i];
+
+		//TODO feather each level
+
+		tmp.reconstruct_to(output, o.start_x, 0, o.width, params.height, stream);
 	}
 
 }
