@@ -15,7 +15,7 @@ namespace gpustitch{
 Stitcher_impl::Stitcher_impl(Stitcher_params stitch_params,
 		const std::vector<Cam_params>& cam_params) :
 	stitcher_params(stitch_params),
-	output(stitch_params.width, stitch_params.height),
+	output(stitch_params.width, stitch_params.height)
 {
 	PROFILE_FUNC;
 	for(const auto& cam_param : cam_params){
