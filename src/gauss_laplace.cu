@@ -229,14 +229,16 @@ void cuda_downsample(gpustitch::Image_cuda *dst,
 		int w, int h,
 		CUstream_st *stream)
 {
+	int downsampled_w = w / 2;
+	int downsampled_h = h / 2;
 	dim3 blockSize(32, 32);
-	dim3 numBlocks((w/2 + blockSize.x - 1) / blockSize.x,
-			(h/2 + blockSize.y - 1) / blockSize.y);
+	dim3 numBlocks((downsampled_w + blockSize.x - 1) / blockSize.x,
+			(downsampled_h + blockSize.y - 1) / blockSize.y);
 
 	kern_downsample<<<numBlocks, blockSize, 0, stream>>>(
 			(unsigned char *) dst->data(), dst->get_pitch(),
 			(const unsigned char *) src->data(), src->get_pitch(),
-			w, h);
+			downsampled_w, downsampled_h);
 }
 
 __global__
@@ -247,7 +249,7 @@ void kern_upsample(unsigned char *dst, int dst_pitch,
 	const int x = (blockIdx.x * blockDim.x) + threadIdx.x;
 	const int y = (blockIdx.y * blockDim.y) + threadIdx.y;
 
-	const uchar4 *src_row = (uchar4 *) (src + y/2 * src_pitch);
+	const uchar4 *src_row = (uchar4 *) (src + (y/2) * src_pitch);
 	uchar4 *dst_row = (uchar4 *) (dst + y * dst_pitch);
 
 	if(x > w || y > h)

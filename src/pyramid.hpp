@@ -25,6 +25,11 @@ public:
 			size_t x, size_t y, size_t w, size_t h,
 			const Cuda_stream& stream);
 
+	const Image_cuda *get_level(int lvl) const{ return &laplace_imgs[lvl]; }
+	Image_cuda *get_level(int lvl){ return &laplace_imgs[lvl]; };
+
+	size_t get_levels(){ return levels; }
+
 private:
 	size_t width;
 	size_t height;

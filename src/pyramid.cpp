@@ -26,10 +26,8 @@ void Pyramid::construct_from(const Image_cuda& src,
 {
 	cudaError_t res;
 
-	unsigned char *src_p = (unsigned char *)(src.data())
-		+ y * src.get_pitch()
-		+ x * src.get_bytes_per_px();
-
+	w = (w / 2) * 2;
+	h = (h / 2) * 2;
 
 	copy_image(&tmp, &src, 0, 0, x, y, w, h, stream);
 
@@ -51,7 +49,7 @@ void Pyramid::construct_from(const Image_cuda& src,
 				stream.get());
 
 		cuda_upsample(&tmp_blurred, &laplacian_next,
-				laplacian_next.get_width(), laplacian_next.get_width(),
+				laplacian_next.get_width(), laplacian_next.get_height(),
 				stream.get());
 
 		cuda_gaussian_blur(&tmp_blurred,
@@ -69,18 +67,21 @@ void Pyramid::construct_from(const Image_cuda& src,
 	}
 
 	auto& base = laplace_imgs[levels-1];
-	copy_image(&base, &tmp, 0, 0, 0, 0, base.get_width(), base.get_height(), stream);
+	//copy_image(&base, &tmp, 0, 0, 0, 0, base.get_width(), base.get_height(), stream);
 }
 
 void Pyramid::reconstruct_to(Image_cuda *dst,
 		size_t x, size_t y, size_t w, size_t h,
 		const Cuda_stream& stream)
 {
+	w = (w / 2) * 2;
+	h = (h / 2) * 2;
+
 	cudaError_t res;
 #if 1
 	auto& base = laplace_imgs[levels-1];
 
-	copy_image(&tmp, &base, x, y, 0, 0, base.get_width(), base.get_height(), stream);
+	copy_image(&tmp, &base, 0, 0, 0, 0, base.get_width(), base.get_height(), stream);
 
 	int curr_w = base.get_width();
 	int curr_h = base.get_height();
@@ -97,14 +98,18 @@ void Pyramid::reconstruct_to(Image_cuda *dst,
 	curr_w *= 2;
 	curr_h *= 2;
 	cuda_gaussian_blur(&tmp_blurred, 0, 0, curr_w, curr_h, stream.get());
-	cuda_add_images(&tmp_blurred, &laplace_imgs[0], dst, w, h, stream.get());
+	cuda_add_images(&tmp_blurred, &laplace_imgs[0], &tmp, w, h, stream.get());
+
+	copy_image(dst, &tmp, x, y, 0, 0, w, h, stream);
 
 #else
-	res = cudaMemcpy2DAsync(dst->data(), dst->get_pitch(),
-			laplace_imgs[0].data(), laplace_imgs[0].get_pitch(),
-			laplace_imgs[0].get_width() * 4, laplace_imgs[0].get_height(),
-			cudaMemcpyDeviceToDevice,
-			stream);
+	const int lvl_idx = 3;
+	for(int i = 0; i < lvl_idx; i++){
+		w /= 2;
+		h /= 2;
+	}
+	const auto& lvl = laplace_imgs[lvl_idx];
+	copy_image(dst, &lvl, x, y, 0, 0, w, h, stream);
 	//cuda_upsample(dst, &laplace_imgs[1], 1024, 1024, stream);
 #endif
 }
