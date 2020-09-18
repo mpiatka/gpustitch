@@ -119,6 +119,11 @@ void Multiband_blender::blend_overlaps(Image_cuda *output,
 
 		//TODO feather each level
 
+		for(size_t i = 0; i < tmp.get_levels(); i++){
+			const auto& src = pyramid.left.get_level(i);
+			copy_image(tmp.get_level(i), src, 0, 0, 0, 0, src->get_width(), src->get_height(), stream);
+		}
+
 		tmp.reconstruct_to(output, o.start_x, 0, o.width, params.height, stream);
 	}
 

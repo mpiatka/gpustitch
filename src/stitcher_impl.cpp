@@ -41,12 +41,13 @@ Stitcher_impl::Stitcher_impl(Stitcher_params stitch_params,
 
 	find_overlaps();
 
-	blender = std::unique_ptr<Blender>(new Feather_blender(stitcher_params, overlaps));
+	blender = std::unique_ptr<Blender>(new Multiband_blender(stitcher_params, overlaps));
 }
 
 void Stitcher_impl::submit_input_image_async(size_t cam_idx){
 	Cam_stitch_ctx& cam_ctx = cam_ctxs[cam_idx];
 	project_cam(cam_ctx);
+	blender->submit_image(*cam_ctx.get_projected_image(), cam_idx, cam_ctx.in_stream);
 }
 
 void Stitcher_impl::submit_input_image(size_t cam_idx, const void *data,
