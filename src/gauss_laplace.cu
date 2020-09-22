@@ -26,7 +26,7 @@ void kern_gauss_blur_row(
 	const int src_x = start_x + x;
 	const int src_y = start_y + y;
 
-	if(src_y > src_h || y > h)
+	if(src_y >= src_h || y >= h)
 		return;
 
 	uchar4 *src_line = (uchar4 *) (src + src_y * src_pitch);
@@ -38,7 +38,7 @@ void kern_gauss_blur_row(
 
 	__syncthreads();
 
-	if(x > w || src_x > src_w)
+	if(x >= w || src_x >= src_w)
 		return;
 
 	float4 val = make_float4(0, 0, 0, 0);
@@ -65,7 +65,7 @@ void kern_gauss_blur_col(
 	const int src_x = start_x + x;
 	const int src_y = start_y + y;
 
-	if(src_x > src_w || x > w)
+	if(src_x >= src_w || x >= w)
 		return;
 
 	int src_y_top = max(0, src_y - GAUSS_KERN_RADIUS);
@@ -78,7 +78,7 @@ void kern_gauss_blur_col(
 
 	__syncthreads();
 
-	if(y > h || src_y > src_h)
+	if(y >= h || src_y >= src_h)
 		return;
 
 	float4 val = make_float4(0, 0, 0, 0);
@@ -136,14 +136,14 @@ void kern_subtract_images(const unsigned char *a, int a_pitch,
 	const uchar4 *b_row = (uchar4 *) (b + y * b_pitch);
 	uchar4 *res_row = (uchar4 *) (res + y * res_pitch);
 
-	if(x > w || y > h)
+	if(x >= w || y >= h)
 		return;
 
 	res_row[x] = make_uchar4(
 			max(0, min(255, 128 + a_row[x].x - b_row[x].x)),
 			max(0, min(255, 128 + a_row[x].y - b_row[x].y)),
 			max(0, min(255, 128 + a_row[x].z - b_row[x].z)),
-			0
+			255
 			);
 }
 
@@ -178,7 +178,7 @@ void kern_add_images(const unsigned char *low, int low_pitch,
 	const uchar4 *high_row = (uchar4 *) (high + y * high_pitch);
 	uchar4 *res_row = (uchar4 *) (res + y * res_pitch);
 
-	if(x > w || y > h)
+	if(x >= w || y >= h)
 		return;
 
 	res_row[x] = make_uchar4(
@@ -218,7 +218,7 @@ void kern_downsample(unsigned char *dst, int dst_pitch,
 	const uchar4 *src_row = (uchar4 *) (src + y * 2 * src_pitch);
 	uchar4 *dst_row = (uchar4 *) (dst + y * dst_pitch);
 
-	if(x > w || y > h)
+	if(x >= w || y >= h)
 		return;
 
 	dst_row[x] = src_row[2*x];
@@ -252,7 +252,7 @@ void kern_upsample(unsigned char *dst, int dst_pitch,
 	const uchar4 *src_row = (uchar4 *) (src + (y/2) * src_pitch);
 	uchar4 *dst_row = (uchar4 *) (dst + y * dst_pitch);
 
-	if(x > w || y > h)
+	if(x >= w || y >= h)
 		return;
 
 	dst_row[x] = src_row[x / 2];
