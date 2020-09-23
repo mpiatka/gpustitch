@@ -14,10 +14,13 @@ public:
 	Cuda_stream& operator=(const Cuda_stream&) = delete;
 	Cuda_stream& operator=(Cuda_stream&& o);
 
+	static const Cuda_stream& get_default();
+
 	CUstream_st *get() const { return stream; }
 	void synchronize() const;
 
 private:
+	Cuda_stream(CUstream_st *s) : stream(s) {  }
 	CUstream_st *stream = 0;
 
 };

@@ -70,6 +70,10 @@ Image_cuda& Image_cuda::operator=(Image_cuda&& o){
 	return *this;
 }
 
+void Image_cuda::init_to(int val, const Cuda_stream& stream){
+	cudaMemset2DAsync(device_data, pitch, val, width * bytes_per_px, height, stream.get());
+}
+
 Image_cpu::Image_cpu(): Image_cpu(0, 0, 0){ }
 
 Image_cpu::Image_cpu(size_t width, size_t height, size_t pitch):

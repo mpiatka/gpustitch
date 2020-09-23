@@ -25,4 +25,10 @@ void Cuda_stream::synchronize() const{
 	cudaStreamSynchronize(stream);
 }
 
+const Cuda_stream& Cuda_stream::get_default(){
+	static Cuda_stream stream(0);
+
+	return stream;
+}
+
 }
