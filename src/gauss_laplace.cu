@@ -12,7 +12,7 @@ __constant__ float gauss_kern[GAUSS_KERN_SIZE];
 
 __global__
 void kern_gauss_blur_row(
-		unsigned char *src, int src_w, int src_h, int src_pitch,
+		unsigned char *src, int src_pitch,
 		int start_x, int start_y,
 		int w, int h)
 {
@@ -26,19 +26,19 @@ void kern_gauss_blur_row(
 	const int src_x = start_x + x;
 	const int src_y = start_y + y;
 
-	if(src_y >= src_h || y >= h)
+	if(y >= h)
 		return;
 
 	uchar4 *src_line = (uchar4 *) (src + src_y * src_pitch);
-	const int src_x_left = max(0, src_x - GAUSS_KERN_RADIUS);
-	const int src_x_right = min(src_w, src_x + GAUSS_KERN_RADIUS);
+	const int src_x_left = min(start_x + w - 1, max(start_x, src_x - GAUSS_KERN_RADIUS));
+	const int src_x_right = min(start_x + w - 1, src_x + GAUSS_KERN_RADIUS);
 
 	data[threadIdx.x + shared_w * threadIdx.y] = src_line[src_x_left];
 	data[threadIdx.x + GAUSS_KERN_RADIUS*2 + shared_w * threadIdx.y] = src_line[src_x_right];
 
 	__syncthreads();
 
-	if(x >= w || src_x >= src_w)
+	if(x >= w)
 		return;
 
 	float4 val = make_float4(0, 0, 0, 0);
@@ -53,7 +53,7 @@ void kern_gauss_blur_row(
 
 __global__
 void kern_gauss_blur_col(
-		unsigned char *src, int src_w, int src_h, int src_pitch,
+		unsigned char *src, int src_pitch,
 		int start_x, int start_y,
 		int w, int h)
 {
@@ -65,11 +65,11 @@ void kern_gauss_blur_col(
 	const int src_x = start_x + x;
 	const int src_y = start_y + y;
 
-	if(src_x >= src_w || x >= w)
+	if(x >= w)
 		return;
 
-	int src_y_top = max(0, src_y - GAUSS_KERN_RADIUS);
-	int src_y_bot = min(src_h, src_y + GAUSS_KERN_RADIUS);
+	int src_y_top = min(start_y + h - 1, max(start_y, src_y - GAUSS_KERN_RADIUS));
+	int src_y_bot = min(start_y + h - 1, src_y + GAUSS_KERN_RADIUS);
 	uchar4 *src_line_top = (uchar4 *) (src + src_y_top * src_pitch);
 	uchar4 *src_line_bot = (uchar4 *) (src + src_y_bot * src_pitch);
 
@@ -78,7 +78,7 @@ void kern_gauss_blur_col(
 
 	__syncthreads();
 
-	if(y >= h || src_y >= src_h)
+	if(y >= h)
 		return;
 
 	float4 val = make_float4(0, 0, 0, 0);
@@ -112,13 +112,11 @@ void cuda_gaussian_blur(const Image_cuda *img, int start_x, int start_y,
 			(h + blockSize.y - 1) / blockSize.y);
 
 	kern_gauss_blur_row<<<numBlocks, blockSize, 0, stream>>>(
-			(unsigned char *) img->data(),
-			img->get_width(), img->get_height(), img->get_pitch(),
+			(unsigned char *) img->data(), img->get_pitch(),
 			start_x, start_y,
 			w, h);
 	kern_gauss_blur_col<<<numBlocks, blockSize, 0, stream>>>(
-			(unsigned char *) img->data(),
-			img->get_width(), img->get_height(), img->get_pitch(),
+			(unsigned char *) img->data(), img->get_pitch(),
 			start_x, start_y,
 			w, h);
 }
