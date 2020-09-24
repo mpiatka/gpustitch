@@ -121,7 +121,16 @@ void Multiband_blender::blend_overlaps(Image_cuda *output,
 
 		for(size_t i = 0; i < tmp.get_levels(); i++){
 			const auto& src = pyramid.left.get_level(i);
-			copy_image(tmp.get_level(i), src, 0, 0, 0, 0, src->get_width(), src->get_height(), stream);
+			//copy_image(tmp.get_level(i), src, 0, 0, 0, 0, src->get_width(), src->get_height(), stream);
+			cuda_blit_overlap(pyramid.left.get_level(i), 0, 0,
+					pyramid.right.get_level(i), 0, 0,
+					pyramid.left.get_level(i)->get_width() / 2, 5, 0,
+					pyramid.left.get_level(i)->get_width(), 
+					tmp.get_level(i), 0, 0,
+					pyramid.left.get_level(i)->get_width(),
+					pyramid.left.get_level(i)->get_height(),
+					stream.get()
+					);
 		}
 
 		tmp.reconstruct_to(output, o.start_x, 0, o.width, params.height, stream);
