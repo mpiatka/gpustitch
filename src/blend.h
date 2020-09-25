@@ -11,4 +11,11 @@ void cuda_blit_overlap(const gpustitch::Image_cuda *left, int l_start_x, int l_s
 		int w, int h,
 		CUstream_st *stream);
 
+void cuda_feather_simple(const gpustitch::Image_cuda *left,
+		const gpustitch::Image_cuda *right,
+		int seam_center, int seam_width,
+		gpustitch::Image_cuda *dst,
+		int w, int h,
+		CUstream_st *stream);
+
 #endif

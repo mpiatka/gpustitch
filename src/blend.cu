@@ -3,6 +3,42 @@
 using namespace gpustitch;
 
 __global__
+void kern_feather_simple(
+		const unsigned char *left, int l_pitch,
+		const unsigned char *right, int r_pitch,
+		int seam_center, int seam_width,
+		unsigned char *dst, int dst_pitch,
+		int w, int h)
+{
+	const int x = (blockIdx.x * blockDim.x) + threadIdx.x;
+	const int y = (blockIdx.y * blockDim.y) + threadIdx.y;
+
+	if(x >= w)
+		return;
+
+	if(y >= h)
+		return;
+
+	uchar4 *l = (uchar4 *)(left + y * l_pitch + x * 4);
+	uchar4 *r = (uchar4 *)(right + y * r_pitch + x * 4);
+
+	const int seam_start = seam_center - seam_width / 2;
+
+	float seam_val = (float) (x - seam_start) / seam_width;
+	seam_val = fmaxf(0, fminf(1, seam_val));
+
+	unsigned char blend_ratio = seam_val * 255;
+	uchar4 *to = (uchar4 *)(dst + y * dst_pitch + x * 4);
+
+	*to = make_uchar4(
+			l->x - (l->x * blend_ratio)/255 + (r->x * blend_ratio)/255,
+			l->y - (l->y * blend_ratio)/255 + (r->y * blend_ratio)/255,
+			l->z - (l->z * blend_ratio)/255 + (r->z * blend_ratio)/255,
+			255
+			);
+}
+
+__global__
 void kern_blit_overlap(
 		const unsigned char *left, int l_start_x, int l_start_y, int l_pitch,
 		const unsigned char *right, int r_start_x, int r_start_y, int r_pitch,
@@ -67,5 +103,24 @@ void cuda_blit_overlap(const Image_cuda *left, int l_start_x, int l_start_y,
 		(const unsigned char *)right->data(), r_start_x, r_start_y, right->get_pitch(),
 		seam_center, seam_width, seam_start, overlap_width,
 		(unsigned char *)dst->data(), dst_x, dst_y, dst->get_pitch(),
+		w, h);
+}
+
+void cuda_feather_simple(const Image_cuda *left, const Image_cuda *right,
+		int seam_center, int seam_width,
+		Image_cuda *dst,
+		int w, int h,
+		CUstream_st *stream)
+{
+	
+	dim3 blockSize(32,32);
+	dim3 numBlocks((w + blockSize.x - 1) / blockSize.x,
+			(h + blockSize.y - 1) / blockSize.y);
+
+	kern_feather_simple<<<numBlocks, blockSize, 0, stream>>>
+		((const unsigned char *)left->data(), left->get_pitch(),
+		(const unsigned char *)right->data(), right->get_pitch(),
+		seam_center, seam_width,
+		(unsigned char *)dst->data(), dst->get_pitch(),
 		w, h);
 }
