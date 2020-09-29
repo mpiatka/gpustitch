@@ -28,7 +28,7 @@ Pyramid::Pyramid(size_t w, size_t h, unsigned levels) :
 		laplace_imgs.emplace_back(curr_w, curr_h);
 	}
 
-	tmp_blurred.init_to(128);
+	tmp_blurred.init_to(128, 128, 128, 255);
 }
 
 void Pyramid::construct_from(const Image_cuda& src,
@@ -96,7 +96,7 @@ void Pyramid::reconstruct_to(Image_cuda *dst,
 		curr_h /= 2;
 	}
 
-	tmp_blurred.init_to(128, stream);
+	tmp_blurred.init_to(128, 128, 128, 255, stream);
 
 	copy_image(&tmp, &base, 0, 0, 0, 0, curr_w, curr_h, stream);
 

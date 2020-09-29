@@ -12,6 +12,7 @@ set(SOURCES
 	gauss_laplace.cu
 	cuda_stream.cpp
 	blender.cpp
+	cuda_helpers.cu
 	)
 
 add_library(gpustitch ${SOURCES})

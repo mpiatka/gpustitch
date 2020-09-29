@@ -61,7 +61,8 @@ public:
 	void *data() { return device_data; }
 	const void *data() const { return device_data; }
 
-	void init_to(int val, const Cuda_stream& stream = Cuda_stream::get_default());
+	void init_to(int r, int g, int b, int a,
+			const Cuda_stream& stream = Cuda_stream::get_default());
 
 private:
 	void *device_data = nullptr;

@@ -2,6 +2,7 @@
 #include <cuda_runtime.h>
 #include "image.hpp"
 #include "profile_timer.hpp"
+#include "cuda_helpers.h"
 
 namespace gpustitch{
 
@@ -70,8 +71,11 @@ Image_cuda& Image_cuda::operator=(Image_cuda&& o){
 	return *this;
 }
 
-void Image_cuda::init_to(int val, const Cuda_stream& stream){
-	cudaMemset2DAsync(device_data, pitch, val, width * bytes_per_px, height, stream.get());
+void Image_cuda::init_to(int r, int g, int b, int a,
+		const Cuda_stream& stream)
+{
+	//cudaMemset2DAsync(device_data, pitch, val, width * bytes_per_px, height, stream.get());
+	cuda_image_memset(this, 0, 0, width, height, r, g, b, a, stream.get());
 }
 
 Image_cpu::Image_cpu(): Image_cpu(0, 0, 0){ }

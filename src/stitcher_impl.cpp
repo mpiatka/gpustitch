@@ -190,7 +190,8 @@ static void cuda_blit(const Image_cuda *src, int src_x, int src_y,
 {
 	copy_image(dst, src, dst_x, dst_y, src_x, src_y, w, h, stream);
 
-	stream.synchronize();
+	//not needed stream is output stream
+	//stream.synchronize();
 	cudaError_t err = cudaGetLastError();
 
 	if(err != cudaSuccess){
