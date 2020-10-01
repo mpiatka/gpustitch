@@ -19,6 +19,7 @@ Cuda_stream::Cuda_stream(Cuda_stream&& o) : stream(o.stream){
 
 Cuda_stream& Cuda_stream::operator=(Cuda_stream&& o){
 	std::swap(stream, o.stream);
+	return *this;
 }
 
 void Cuda_stream::synchronize() const{

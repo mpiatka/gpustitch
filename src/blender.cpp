@@ -117,26 +117,13 @@ void Multiband_blender::blend_overlaps(Image_cuda *output,
 		const auto& o = overlaps[i];
 		const auto& pyramid = overlap_pyramids[i];
 
-		//TODO feather each level
-
 		for(size_t i = 0; i < tmp.get_levels(); i++){
-			const auto& src = pyramid.left.get_level(i);
-			//copy_image(tmp.get_level(i), src, 0, 0, 0, 0, src->get_width(), src->get_height(), stream);
-			/*
-			cuda_blit_overlap(pyramid.left.get_level(i), 0, 0,
-					pyramid.right.get_level(i), 0, 0,
-					pyramid.left.get_level(i)->get_width() / 2, 5, 0,
-					pyramid.left.get_level(i)->get_width(), 
-					tmp.get_level(i), 0, 0,
-					pyramid.left.get_level(i)->get_width(),
-					pyramid.left.get_level(i)->get_height(),
-					stream.get()
-					);
-					*/
-			int w = pyramid.left.get_level(i)->get_width();
-			int h = pyramid.left.get_level(i)->get_height();
-			cuda_feather_simple(pyramid.left.get_level(i),
-					pyramid.right.get_level(i),
+			const auto& src_l = pyramid.left.get_level(i);
+			const auto& src_r = pyramid.right.get_level(i);
+			int w = src_l->get_width();
+			int h = src_l->get_height();
+			cuda_feather_simple(src_l,
+					src_r,
 					w / 2, 24,
 					tmp.get_level(i),
 					w, h,

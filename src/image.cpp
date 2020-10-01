@@ -108,7 +108,8 @@ void Image_cpu::upload(Image_cuda& dst){
 }
 
 void copy_image(Image_cuda *dst, const Image_cuda *src,
-		int dst_x, int dst_y, int src_x, int src_y, int w, int h,
+		unsigned dst_x, unsigned dst_y, unsigned src_x, unsigned src_y,
+		unsigned w, unsigned h,
 		const Cuda_stream& stream)
 {
 	assert(dst_x + w <= dst->get_width());

@@ -26,8 +26,8 @@ public:
 			const Cuda_stream& stream) {  }
 
 protected:
-	const std::vector<Overlap>& overlaps;
 	const Stitcher_params& params;
+	const std::vector<Overlap>& overlaps;
 
 };
 

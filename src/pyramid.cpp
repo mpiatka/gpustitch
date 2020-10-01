@@ -11,6 +11,9 @@ Pyramid::Pyramid(size_t w, size_t h, unsigned levels) :
 	tmp(width, height),
 	tmp_blurred(width, height)
 {
+	if(levels == 0){
+		throw "Level count needs to be non-zero";
+	}
 	size_t curr_w = width;
 	size_t curr_h = height;
 	laplace_imgs.emplace_back(curr_w, curr_h);
@@ -22,7 +25,7 @@ Pyramid::Pyramid(size_t w, size_t h, unsigned levels) :
 		curr_w *= 2;
 		curr_h *= 2;
 	}
-	for(unsigned i = 1; i < levels; i++){
+	for(unsigned i = 0; i < levels - 1; i++){
 		curr_w /= 2;
 		curr_h /= 2;
 		laplace_imgs.emplace_back(curr_w, curr_h);
@@ -75,9 +78,6 @@ void Pyramid::construct_from(const Image_cuda& src,
 				laplacian_next.get_width(), laplacian_next.get_height(),
 				stream);
 	}
-
-	auto& base = laplace_imgs[levels-1];
-	//copy_image(&base, &tmp, 0, 0, 0, 0, base.get_width(), base.get_height(), stream);
 }
 
 void Pyramid::reconstruct_to(Image_cuda *dst,
@@ -91,7 +91,7 @@ void Pyramid::reconstruct_to(Image_cuda *dst,
 	int curr_w = w;//base.get_width();
 	int curr_h = h;//base.get_height();
 
-	for(int i = 0; i < levels - 1; i++){
+	for(unsigned i = 0; i < levels - 1; i++){
 		curr_w /= 2;
 		curr_h /= 2;
 	}

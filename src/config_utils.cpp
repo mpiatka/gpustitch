@@ -11,7 +11,7 @@ namespace gpustitch{
 		}
 	}
 
-bool read_params(const std::string& path,
+void read_params(const std::string& path,
 		Stitcher_params& stitch_param,
 		std::vector<Cam_params>& cam_params)
 {
@@ -36,7 +36,6 @@ bool read_params(const std::string& path,
 
 		cam_params.push_back(param);
 	}
-
 }
 
 }

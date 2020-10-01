@@ -18,8 +18,8 @@ public:
 	Cam_stitch_ctx(Stitcher_params stitch_params, Cam_params cam_params) :
 		cam_params(cam_params),
 		stitch_params(stitch_params),
-		in_array(cam_params.width, cam_params.height),
-		projected(stitch_params.width, stitch_params.height)
+		projected(stitch_params.width, stitch_params.height),
+		in_array(cam_params.width, cam_params.height)
 	{
 		PROFILE_FUNC;
 		getRotationMat(cam_params.yaw,
