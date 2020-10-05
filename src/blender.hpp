@@ -16,6 +16,7 @@ class Blender{
 public:
 	Blender(const Stitcher_params& params,
 			const std::vector<Overlap>& overlaps);
+	virtual ~Blender() = default;
 
 	virtual void blend_overlaps(Image_cuda *output,
 			const std::vector<Cam_stitch_ctx>& cam_ctxs,
@@ -35,6 +36,7 @@ class Feather_blender : public Blender{
 public:
 	Feather_blender(const Stitcher_params& params,
 			const std::vector<Overlap>& overlaps);
+	~Feather_blender() = default;
 
 	virtual void blend_overlaps(Image_cuda *output,
 			const std::vector<Cam_stitch_ctx>& cam_ctxs,
@@ -53,6 +55,7 @@ class Multiband_blender : public Blender{
 public:
 	Multiband_blender(const Stitcher_params& params,
 			const std::vector<Overlap>& overlaps);
+	~Multiband_blender() = default;
 
 	virtual void blend_overlaps(Image_cuda *output,
 			const std::vector<Cam_stitch_ctx>& cam_ctxs,

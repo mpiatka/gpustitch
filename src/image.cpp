@@ -65,8 +65,7 @@ Image_cuda::Image_cuda(Image_cuda&& o): Image(std::move(o)){
 
 Image_cuda& Image_cuda::operator=(Image_cuda&& o){
 	Image::operator=(std::move(o));
-	device_data = o.device_data;
-	o.device_data = nullptr;
+	std::swap(device_data, o.device_data);
 
 	return *this;
 }

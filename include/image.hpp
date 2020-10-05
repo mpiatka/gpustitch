@@ -17,6 +17,7 @@ public:
 
 protected:
 	Image();
+	virtual ~Image() = default;
 	Image(size_t width, size_t height, size_t pitch = 0);
 	Image(const Image&) = delete;
 	Image(Image&& o);
