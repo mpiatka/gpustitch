@@ -17,14 +17,12 @@ Pyramid::Pyramid(size_t w, size_t h, unsigned levels) :
 	size_t curr_w = width;
 	size_t curr_h = height;
 	laplace_imgs.emplace_back(curr_w, curr_h);
-	for(unsigned i = 0; i < levels - 1; i++){
-		curr_w /= 2;
-		curr_h /= 2;
-	}
-	for(unsigned i = 0; i < levels - 1; i++){
-		curr_w *= 2;
-		curr_h *= 2;
-	}
+
+	/* Zeroes out lowest levels-1 bits to make sure that each level is exactly
+	 * half the size of the previous one (without remainder in the division) */
+	curr_w &= ~((1 << (levels - 1)) - 1);
+	curr_h &= ~((1 << (levels - 1)) - 1);
+
 	for(unsigned i = 0; i < levels - 1; i++){
 		curr_w /= 2;
 		curr_h /= 2;
@@ -88,13 +86,8 @@ void Pyramid::reconstruct_to(Image_cuda *dst,
 #if 1
 	auto& base = laplace_imgs[levels-1];
 
-	int curr_w = w;//base.get_width();
-	int curr_h = h;//base.get_height();
-
-	for(unsigned i = 0; i < levels - 1; i++){
-		curr_w /= 2;
-		curr_h /= 2;
-	}
+	int curr_w = w >> (levels - 1);
+	int curr_h = h >> (levels - 1);
 
 	tmp_blurred.init_to(128, 128, 128, 255, stream);
 
