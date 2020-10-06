@@ -43,9 +43,10 @@ int main(){
 
 	std::vector<Cam_params> cam_params;
 
-	Cam_params params;
+	Cam_params params{};
 	params.width = 3840;
 	params.height = 2160;
+	params.distortion[3] = 1;
 
 	params.focal_len = 1173.753;
 	params.yaw = toRadian(0.02325995);
