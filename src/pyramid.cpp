@@ -32,13 +32,12 @@ Pyramid::Pyramid(size_t w, size_t h, unsigned levels) :
 	tmp_blurred.init_to(128, 128, 128, 255);
 }
 
-void Pyramid::construct_from(const Image_cuda& src,
-			size_t x, size_t y, size_t w, size_t h,
-			const Cuda_stream& stream)
-{
-	cudaError_t res;
+Image_cuda *Pyramid::get_construct_in(){
+	return &tmp;
+}
 
-	copy_image(&tmp, &src, 0, 0, x, y, w, h, stream);
+void Pyramid::construct(size_t w, size_t h, const Cuda_stream& stream){
+	cudaError_t res;
 
 	for(unsigned i = 0; i < levels - 1; i++){
 		auto& laplacian = laplace_imgs[i];
@@ -78,12 +77,10 @@ void Pyramid::construct_from(const Image_cuda& src,
 	}
 }
 
-void Pyramid::reconstruct_to(Image_cuda *dst,
-		size_t x, size_t y, size_t w, size_t h,
+const Image_cuda *Pyramid::get_reconstructed(size_t w, size_t h,
 		const Cuda_stream& stream)
 {
 	cudaError_t res;
-#if 1
 	auto& base = laplace_imgs[levels-1];
 
 	int curr_w = w >> (levels - 1);
@@ -107,20 +104,7 @@ void Pyramid::reconstruct_to(Image_cuda *dst,
 	cuda_gaussian_blur(&tmp_blurred, 0, 0, curr_w, curr_h, stream.get());
 	cuda_add_images(&tmp_blurred, &laplace_imgs[0], &tmp, w, h, stream.get());
 
-	copy_image(dst, &tmp, x, y, 0, 0, w, h, stream);
-
-#else
-	const int lvl_idx = 0;
-	for(int i = 0; i < lvl_idx; i++){
-		w /= 2;
-		h /= 2;
-	}
-
-	auto& lvl = laplace_imgs[lvl_idx];
-	//cuda_upsample(&lvl, &laplace_imgs[1], w / 2, h / 2, stream.get());
-	//cuda_gaussian_blur(&lvl, 0, 0, w, h, stream.get());
-	copy_image(dst, &lvl, x, y, 0, 0, w, h, stream);
-#endif
+	return &tmp;
 }
 
 }

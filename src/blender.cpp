@@ -88,6 +88,31 @@ Multiband_blender::Multiband_blender(const Stitcher_params& params,
 
 }
 
+static void construct_pyramid(Pyramid& p, const Image_cuda& in,
+		const Overlap& o, size_t height,
+		const Cuda_stream& stream)
+{
+	Image_cuda *dst = p.get_construct_in();
+
+	if(o.start_x < o.end_x){
+		copy_image(dst, &in,
+				0, 0, o.start_x, 0,
+				o.width, height,
+				stream);
+	} else {
+		copy_image(dst, &in,
+				0, 0, o.start_x, 0,
+				o.width - o.end_x, height,
+				stream);
+		copy_image(dst, &in,
+				o.width - o.end_x, 0, 0, 0,
+				o.end_x, height,
+				stream);
+	}
+
+	p.construct(o.width, height, stream);
+}
+
 void Multiband_blender::submit_image(const Image_cuda& in,
 		size_t idx,
 		const Cuda_stream& stream)
@@ -95,16 +120,11 @@ void Multiband_blender::submit_image(const Image_cuda& in,
 	for(size_t i = 0; i < overlaps.size(); i++){
 		const auto& o = overlaps[i];
 		auto& pyramids = overlap_pyramids[i];
-		//TODO handle wrap-around case
 		if(idx == o.left_idx){
-			pyramids.left.construct_from(in,
-					o.start_x, 0, o.width, params.height,
-					stream);
+			construct_pyramid(pyramids.left, in, o, params.height, stream);
 		}
 		if(idx == o.right_idx){
-			pyramids.right.construct_from(in,
-					o.start_x, 0, o.width, params.height,
-					stream);
+			construct_pyramid(pyramids.right, in, o, params.height, stream);
 		}
 	}
 }
@@ -130,7 +150,24 @@ void Multiband_blender::blend_overlaps(Image_cuda *output,
 					stream.get());
 		}
 
-		tmp.reconstruct_to(output, o.start_x, 0, o.width, params.height, stream);
+		const Image_cuda *res = tmp.get_reconstructed(o.width, params.height, stream);
+
+		if(o.start_x < o.end_x){
+			copy_image(output, res,
+					o.start_x, 0, 0, 0,
+					o.width, params.height,
+					stream);
+		} else {
+			copy_image(output, res,
+					o.start_x, 0, 0, 0,
+					o.width - o.end_x, params.height,
+					stream);
+
+			copy_image(output, res,
+					0, 0, o.width - o.end_x, 0,
+					o.end_x, params.height,
+					stream);
+		}
 	}
 
 }

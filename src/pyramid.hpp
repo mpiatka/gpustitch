@@ -17,13 +17,12 @@ public:
 	Pyramid& operator=(const Pyramid&) = delete;
 	Pyramid& operator=(Pyramid&&) = default;
 
-	void construct_from(const Image_cuda& src,
-			size_t x, size_t y, size_t w, size_t h,
-			const Cuda_stream& stream);
+	Image_cuda *get_construct_in();
 
-	void reconstruct_to(Image_cuda *dst,
-			size_t x, size_t y, size_t w, size_t h,
-			const Cuda_stream& stream);
+	void construct(size_t w, size_t h, const Cuda_stream& stream);
+
+	const Image_cuda* get_reconstructed(size_t w, size_t h,
+		const Cuda_stream& stream);
 
 	const Image_cuda *get_level(int lvl) const{ return &laplace_imgs[lvl]; }
 	Image_cuda *get_level(int lvl){ return &laplace_imgs[lvl]; };
