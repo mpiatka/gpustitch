@@ -13,6 +13,7 @@ struct Stitcher_params{
 	int height;
 
 	Blend_algorithm blend_algorithm;
+	int feather_width;
 };
 
 }

@@ -25,11 +25,11 @@ void Feather_blender::blend_overlaps(Image_cuda *output,
 		const Image_cuda *left = cam_ctxs[o.left_idx].get_projected_image();
 		const Image_cuda *right = cam_ctxs[o.right_idx].get_projected_image();
 
-		const int seam_width = 30;
+		const int seam_width = params.feather_width;
 
 		int overlap_width = (o.start_x < o.end_x) ? o.end_x - o.start_x : output->get_width() - o.start_x + o.end_x;
 
-		const int seam_center = overlap_width / 2 + sin(clock() / 1000000.0) * 150;
+		const int seam_center = overlap_width / 2;// + sin(clock() / 1000000.0) * 150;
 
 		if(o.start_x < o.end_x){
 			const int w = o.end_x - o.start_x;
