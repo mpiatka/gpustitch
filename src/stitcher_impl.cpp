@@ -1,6 +1,7 @@
 #include <cmath>
 #include <cstring>
 #include <iostream>
+#include <stdexcept>
 #include <time.h>
 #include <cuda_runtime.h>
 #include "stitcher_impl.hpp"
@@ -41,7 +42,18 @@ Stitcher_impl::Stitcher_impl(Stitcher_params stitch_params,
 
 	find_overlaps();
 
-	blender = std::unique_ptr<Blender>(new Multiband_blender(stitcher_params, overlaps));
+	switch(stitcher_params.blend_algorithm){
+	case Blend_algorithm::Multiband:
+		blender = std::unique_ptr<Blender>(new Multiband_blender(stitcher_params, overlaps));
+		break;
+	case Blend_algorithm::Feather:
+		blender = std::unique_ptr<Blender>(new Feather_blender(stitcher_params, overlaps));
+		break;
+	default:
+		throw std::invalid_argument("Invalid blend algorithm");
+		break;
+	}
+
 }
 
 void Stitcher_impl::submit_input_image_async(size_t cam_idx){

@@ -3,9 +3,16 @@
 
 namespace gpustitch{
 
+enum Blend_algorithm{
+	Multiband = 0,
+	Feather
+};
+
 struct Stitcher_params{
 	int width;
 	int height;
+
+	Blend_algorithm blend_algorithm;
 };
 
 }
