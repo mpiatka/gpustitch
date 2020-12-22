@@ -14,6 +14,7 @@ struct Stitcher_params{
 
 	Blend_algorithm blend_algorithm;
 	int feather_width;
+	int multiband_levels;
 };
 
 }

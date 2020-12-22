@@ -49,6 +49,7 @@ private:
 struct Overlap_pyramid{
 	Pyramid left;
 	Pyramid right;
+	Pyramid tmp;
 };
 
 class Multiband_blender : public Blender{
@@ -67,7 +68,6 @@ public:
 
 private:
 	std::vector<Overlap_pyramid> overlap_pyramids; 
-	Pyramid tmp;
 };
 
 }

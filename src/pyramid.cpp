@@ -11,8 +11,8 @@ Pyramid::Pyramid(size_t w, size_t h, unsigned levels) :
 	tmp(width, height),
 	tmp_blurred(width, height)
 {
-	if(levels == 0){
-		throw "Level count needs to be non-zero";
+	if(levels < 2){
+		throw "Level count needs to be at least 2";
 	}
 	size_t curr_w = width;
 	size_t curr_h = height;

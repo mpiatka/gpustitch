@@ -74,13 +74,28 @@ static size_t get_max_width(const std::vector<Overlap>& overlaps){
 
 Multiband_blender::Multiband_blender(const Stitcher_params& params,
 		const std::vector<Overlap>& overlaps) :
-	Blender(params, overlaps),
-	tmp(get_max_width(overlaps), params.height, 4)
+	Blender(params, overlaps)
 {
 	for(const auto& o : overlaps){
+		int levels = params.multiband_levels;
+
+		/* Make sure that the smallest level is at least min_size big by
+		 * limiting the number of levels
+		 */
+		const int min_size = 16;
+		for(int i = 1, w = o.width, h = params.height; i < levels; i++){
+			w /= 2;
+			h /= 2;
+			if(w < min_size || h < min_size){
+				levels = i;
+				break;
+			}
+		}
+
 		Overlap_pyramid in_pyramid{
-			Pyramid(o.width, params.height, 4),
-			Pyramid(o.width, params.height, 4)
+			Pyramid(o.width, params.height, levels),
+			Pyramid(o.width, params.height, levels),
+			Pyramid(o.width, params.height, levels)
 		};
 
 		overlap_pyramids.emplace_back(std::move(in_pyramid));
@@ -135,8 +150,10 @@ void Multiband_blender::blend_overlaps(Image_cuda *output,
 {
 	for(size_t i = 0; i < overlaps.size(); i++){
 		const auto& o = overlaps[i];
-		const auto& pyramid = overlap_pyramids[i];
+		auto& pyramid = overlap_pyramids[i];
 
+		auto& tmp = pyramid.tmp;
+		int blend_width = tmp.get_level(tmp.get_levels() - 1)->get_width();
 		for(size_t i = 0; i < tmp.get_levels(); i++){
 			const auto& src_l = pyramid.left.get_level(i);
 			const auto& src_r = pyramid.right.get_level(i);
@@ -144,7 +161,7 @@ void Multiband_blender::blend_overlaps(Image_cuda *output,
 			int h = src_l->get_height();
 			cuda_feather_simple(src_l,
 					src_r,
-					w / 2, 24,
+					w / 2, blend_width,
 					tmp.get_level(i),
 					w, h,
 					stream.get());
