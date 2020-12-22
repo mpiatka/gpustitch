@@ -1,6 +1,7 @@
 #include <utility>
 #include <cuda_runtime.h>
 #include "cuda_stream.hpp"
+#include "cuda_event.hpp"
 
 namespace gpustitch{
 
@@ -24,6 +25,10 @@ Cuda_stream& Cuda_stream::operator=(Cuda_stream&& o){
 
 void Cuda_stream::synchronize() const{
 	cudaStreamSynchronize(stream);
+}
+
+void Cuda_stream::wait_event(const Cuda_event& event) const{
+	cudaStreamWaitEvent(stream, event.get());
 }
 
 const Cuda_stream& Cuda_stream::get_default(){

@@ -128,6 +128,8 @@ void Stitcher_impl::project_cam(Cam_stitch_ctx& cam_ctx){
 	int start_y = 0;
 	int end_y = stitcher_params.height;
 
+	cam_ctx.in_stream.wait_event(cam_ctx.finished_reading_event);
+
 	if(start_x < end_x){
 		cuda_project_cam(cam_ctx, start_x, end_x, start_y, end_y);
 	} else {
@@ -256,6 +258,10 @@ void Stitcher_impl::copy_non_overlaping(){
 void Stitcher_impl::stitch(){
 	copy_non_overlaping();
 	blender->blend_overlaps(&output, cam_ctxs, out_stream);
+
+	for(auto& ctx : cam_ctxs){
+		ctx.finished_reading_event.record(out_stream);
+	}
 }
 
 

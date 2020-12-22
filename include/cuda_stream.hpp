@@ -5,6 +5,8 @@
 
 namespace gpustitch{
 
+class Cuda_event;
+
 class Cuda_stream{
 public:
 	Cuda_stream();
@@ -18,6 +20,7 @@ public:
 
 	CUstream_st *get() const { return stream; }
 	void synchronize() const;
+	void wait_event(const Cuda_event& event) const;
 
 private:
 	Cuda_stream(CUstream_st *s) : stream(s) {  }

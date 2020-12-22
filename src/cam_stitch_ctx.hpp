@@ -10,6 +10,7 @@
 #include "profile_timer.hpp"
 #include "gpustitch_common.hpp"
 #include "cuda_stream.hpp"
+#include "cuda_event.hpp"
 
 namespace gpustitch{
 
@@ -46,6 +47,8 @@ public:
 	Image_cuda_array in_array;
 
 	Cuda_stream in_stream;
+
+	Cuda_event finished_reading_event;
 
 	double proj_angle_start;
 	double proj_angle_end;

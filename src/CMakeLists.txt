@@ -13,6 +13,7 @@ set(SOURCES
 	cuda_stream.cpp
 	blender.cpp
 	cuda_helpers.cu
+	cuda_event.cpp
 	)
 
 add_library(gpustitch ${SOURCES})
