@@ -28,7 +28,7 @@ void Cuda_stream::synchronize() const{
 }
 
 void Cuda_stream::wait_event(const Cuda_event& event) const{
-	cudaStreamWaitEvent(stream, event.get());
+	cudaStreamWaitEvent(stream, event.get(), 0);
 }
 
 const Cuda_stream& Cuda_stream::get_default(){
